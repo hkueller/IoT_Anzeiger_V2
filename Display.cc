@@ -48,8 +48,8 @@ void display::begin() {
 	epd.Init();
 	//Fillup framebuffer with startup information
 	paint->Clear(UNCOLORED);
-	paint->DrawStringAt(110, 110, "IOT Display", &Font24, COLORED);
-	paint->DrawStringAt(110, 150, "Starting Up", &Font24, COLORED);
+	paint->DrawStringAt(110, 110, "IOT Display", &INITFONT, COLORED);
+	paint->DrawStringAt(110, 150, "Starting Up", &INITFONT, COLORED);
 	//and Display the frame
 	epd.DisplayFrame(framebuffer);
 }
@@ -58,61 +58,54 @@ void display::LoadFrame() {
 	//some later needed vars
 	//for calculating the position
 	//of Values
-	int strlen;
+	String headline;
 	//one char has the width of 17 pixel
-	int charsize=17;
+	//int charsize=CHARSIZE;
 	//clear the painting buffer
 	paint->Clear(UNCOLORED);
 	//draw the frames on the display
 	paint->DrawVerticalLine(1,1,299,COLORED);
 	paint->DrawVerticalLine(399,1,299,COLORED);
 	paint->DrawHorizontalLine(1,1,399,COLORED);
-	paint->DrawHorizontalLine(1,108,399,COLORED);
-	paint->DrawHorizontalLine(1,222,399,COLORED);
+	//paint->DrawHorizontalLine(1,102,399,COLORED);
+	paint->DrawHorizontalLine(1,FIRSTLINE+(5*LINESPACE)-1,399,COLORED);
+	paint->DrawHorizontalLine(1,FIRSTLINE+(9*LINESPACE)-1,399,COLORED);
 	paint->DrawHorizontalLine(1,299,399,COLORED);
 	//draw the text context and values on the display
-	paint->DrawStringAt(25, 5, "SolarInfo", &Font24, COLORED);
-	paint->DrawStringAt(190, 5, String(date).c_str(), &Font24, COLORED);
-	paint->DrawStringAt(3, 30, "PV-Ertrag:            W", &Font24, COLORED);
-	//Get the length of the string to draw
-	strlen=String(PV_Leistung).length();
-	//Calculate the starting position (end must be on 343+charsize pixel pos
-	strlen=343+charsize-(strlen*charsize);
-	//and now draw the value at the calculated position
-	paint->DrawStringAt(strlen, 30, String(PV_Leistung).c_str(),&Font24,COLORED);
-	//this will no be redone for every line to display
-	paint->DrawStringAt(3, 54, "Verbrauch:            W", &Font24, COLORED);
-	strlen=String(PV_Verbrauch).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 54, String(PV_Verbrauch).c_str(),&Font24,COLORED);
-	paint->DrawStringAt(3, 78, "Batterie:             %", &Font24, COLORED);
-	strlen=String(PV_Batterie).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 78, String(PV_Batterie).c_str(),&Font24,COLORED);
-	paint->DrawStringAt(30, 120, "Wetter Informationen", &Font24, COLORED);
-	paint->DrawStringAt(3, 144, "Temperatur            C", &Font24, COLORED);
-	strlen=String(WT_Temperatur).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 144, String(WT_Temperatur).c_str(),&Font24,COLORED);
-	paint->DrawStringAt(3, 168, "Feuchte               %", &Font24, COLORED);
-	strlen=String(WT_Feuchte).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 168, String(WT_Feuchte).c_str(),&Font24,COLORED);
-	paint->DrawStringAt(3, 192, "Luftdruck            hP", &Font24, COLORED);
-	strlen=String(WT_Druck).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 192, String(WT_Druck,1).c_str(),&Font24,COLORED);
-	paint->DrawStringAt(85,234,"Pellets Lager", &Font24, COLORED);
-	paint->DrawStringAt(3,258,"Gewicht Bestand:      T", &Font24, COLORED);
-	strlen=String(PL_Gewicht,3).length();
-	strlen=343+charsize-(strlen*charsize);
-	paint->DrawStringAt(strlen, 258, String(PL_Gewicht,3).c_str(),&Font24,COLORED);
+	headline="Solarinfo " + date;
+	PrintHeadLine(25,0,headline);
+	//paint->DrawStringAt(25, FIRSTLINE, "SolarInfo", &FONT, COLORED);
+	//paint->DrawStringAt(190, FIRSTLINE, String(date).c_str(), &FONT, COLORED);
+	PrintValueLine(3,1,0,String("PV-Ertrag:"),String("W"),String(PV_Leistung));
+	PrintValueLine(3,2,0,String("Verbrauch:"),String("W"),String(PV_Verbrauch));
+	PrintValueLine(3,3,0,String("Batterie:"),String("%"),String(PV_Batterie));
+	PrintValueLine(3,4,0,String("Wallbox:"),String("W"),String(PV_WallboxWatt));
+	PrintHeadLine(30,5,String("Wetter Informationen"));
+	PrintValueLine(3,6,0,String("Temperatur:"),String("C"),String(WT_Temperatur,2));
+	PrintValueLine(3,7,0,String("Feuchte:"),String("%"),String(WT_Feuchte,2));
+	PrintValueLine(3,8,1,String("Luftdruck:"),String("hP"),String(WT_Druck,1));
+	PrintHeadLine(82,9,String("Pellets Heizung"));
+	//PrintValueLine(3,10,0,String("Gew. Bestand:"),String("T"),String(PL_Gewicht,3));
+	PrintValueLine(3,10,0,String("Bestand:"),String("T"),String(HZ_Lager,3));
+	headline="Status: " + HZ_Fehler;
+	PrintHeadLine(3,11,headline);
+	//PrintValueLine(3,11,0,String("Hzg Status:"),String(""),String(HZ_Fehler));
 	//Send the Buffer to the Display, and do a refresh with the contents
 	//of this buffer (attention this will switch internal (display) the buffers
 	epd.DisplayFrame(framebuffer);
 	Update=false;
 }
 
+void display::PrintHeadLine(int x, int linenum, String head) {
+	paint->DrawStringAt(x,FIRSTLINE+(linenum*LINESPACE),head.c_str(), &FONT, COLORED);
+}
+
+void display::PrintValueLine(int x, int linenum, int left, String name, String type, String value) {
+	paint->DrawStringAt(x, FIRSTLINE + ( linenum * LINESPACE ), name.c_str(), &FONT, COLORED);
+	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(type.length()*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), type.c_str(), &FONT, COLORED);
+	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(2*CHARSIZE)-(value.length()*CHARSIZE)-(left*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), value.c_str(), &FONT, COLORED);
+	//paint->DrawStringAt(3, FIRSTLINE + ( 1 * LINESPACE ), "PV-Ertrag:            W", &FONT, COLORED);
+}
 
 void display::LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht) {
 	//Just assign the given Values
@@ -154,6 +147,9 @@ void display::UpdatePVBatterie(int batterie) {
 	//Just assign new value
 	PV_Batterie=batterie;
 }
+void display::UpdatePVWallboxWatt(long WallboxWatt) {
+	PV_WallboxWatt=WallboxWatt;
+}
 void display::UpdatePVHeizstab(long leistung) {
 	PV_Heizstab=leistung;
 }
@@ -172,6 +168,12 @@ void display::UpdateWTDruck(float Druck) {
 void display::UpdatePLGewicht(float Gewicht) {
 	//Just assign new value
 	PL_Gewicht=Gewicht;
+}
+void display::UpdateHzLager(float lager) {
+	HZ_Lager=lager;
+}
+void display::UpdateHzFehler(String fehler) {
+	HZ_Fehler=fehler;
 }
 long display::GetPVLeistung() {
 	return(PV_Leistung);
@@ -194,6 +196,9 @@ long display::GetPVVerbrauch() {
 int display::GetPVBatterie() {
 	return(PV_Batterie);
 }
+long display::GetPVWallboxWatt() {
+	return(PV_WallboxWatt);
+}
 long display::GetPVHeizstab() {
 	return(PV_Heizstab);
 }
@@ -208,6 +213,12 @@ float display::GetWTDruck() {
 }
 float display::GetPLGewicht() {
 	return(PL_Gewicht);
+}
+float display::GetHzLager() {
+	return(HZ_Lager);
+}
+String display::GetHzFehler() {
+	return(HZ_Fehler);
 }
 void display::EnableUpdate() {
 	Update=true;

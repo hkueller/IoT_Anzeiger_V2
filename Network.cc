@@ -97,6 +97,9 @@ void network::handleWeb(display *disp) {
 						temp+="</td></tr><tr><td>Haus Verbrauch:</td><td style=\"text-align:right\">\n";
 						temp+=String(disp->GetPVVerbrauch());
 						temp+=" W";
+						temp+="</td></tr><tr><td>Wallbox Leistung:</td><td style=\"text-align:right\">\n";
+						temp+=String(disp->GetPVWallboxWatt());
+						temp+=" W";
 						temp+="</td></tr><tr><td>Externer Versorger:</td><td style=\"text-align:right\">\n";
 						temp+=String(disp->GetPVLeistung_grid());
 						temp+=" W";
@@ -131,6 +134,11 @@ void network::handleWeb(display *disp) {
 						//we want the pellts ammount in tonns with 3 values after .
 						temp+=String(disp->GetPLGewicht(),3);
 						temp+=" T";
+						temp+="</td></tr><tr><td>Pellets im Lager(Hzg):</td><td style=\"text-align:right\">\n";
+						temp+=String(disp->GetHzLager(),3);
+						temp+=" T";
+						temp+="</td></tr><tr><td>Heizung Status:</td><td style=\"text-align:right\">\n";
+						temp+=disp->GetHzFehler();
 						temp+="</td></tr></tbody></table></center><br></body></html>\n\n";
 						//now send the string buffer
 						client.print(temp);
@@ -189,7 +197,7 @@ void network::UpdateData(display *disp) {
 		disp->SetDate(Result);
 		Result = client->readStringUntil('\n');
 	}
-	client->print("list E3DC pv_gesammt_leistung pv_ost_leistung pv_west_leistung batterie_ladeleistung netzbezug eigenverbrauch batterie_fuellstand\n");
+	client->print("list E3DC pv_gesammt_leistung pv_ost_leistung pv_west_leistung batterie_ladeleistung netzbezug eigenverbrauch batterie_fuellstand Wallboxwatt\n");
 	lasttime=millis();
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
@@ -221,6 +229,10 @@ void network::UpdateData(display *disp) {
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVBatterie(Result.toInt());
+		Result = client->readStringUntil('\n');
+		pos=Result.lastIndexOf(" ");
+		Result=Result.substring(pos+1);
+		disp->UpdatePVWallboxWatt((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
 	}
 	client->print("list kg_hzg_pvheat Leistung\n");
@@ -260,6 +272,30 @@ void network::UpdateData(display *disp) {
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePLGewicht(Result.toFloat());
+		Result = client->readStringUntil('\n');
+	}
+	client->print("list kg_hzg_brenner lager_kg\n");
+	lasttime=millis();
+	while(!client->available() && millis() - lasttime < 1000) {yield();}
+	while(client->available()) {
+		Result = client->readStringUntil('\n');
+		pos=Result.lastIndexOf(" ");
+		Result.remove(pos,1);
+		pos=Result.lastIndexOf(" ");
+		Result=Result.substring(pos+1);
+		disp->UpdateHzLager(Result.toFloat()/1000);
+		Result = client->readStringUntil('\n');
+	}
+	client->print("list kg_hzg_brenner Stoerungs_nummer\n");
+	lasttime=millis();
+	while(!client->available() && millis() - lasttime < 1000) {yield();}
+	while(client->available()) {
+		Result = client->readStringUntil('\n');
+		pos=Result.lastIndexOf(" ");
+		Result.remove(pos,1);
+		pos=Result.lastIndexOf(" ");
+		Result=Result.substring(pos+1);
+		disp->UpdateHzFehler(Result);
 		Result = client->readStringUntil('\n');
 	}
 	disp->EnableUpdate();
