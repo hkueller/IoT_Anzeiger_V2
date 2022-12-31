@@ -202,34 +202,42 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVLeistung((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVLeistung_ost((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVLeistung_west((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVLeistung_batt((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVLeistung_grid((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVVerbrauch((long) Result.toDouble());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVBatterie(Result.toInt());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVWallboxWatt((long) Result.toDouble());
@@ -240,6 +248,7 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePVHeizstab((long) Result.toDouble());
@@ -250,14 +259,17 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdateWTTemperatur(Result.toFloat());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdateWTFeuchte(Result.toFloat());
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdateWTDruck(Result.toFloat());
@@ -269,6 +281,7 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdatePLGewicht(Result.toFloat());
@@ -279,8 +292,7 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
-		pos=Result.lastIndexOf(" ");
-		Result.remove(pos,1);
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdateHzLager(Result.toFloat()/1000);
@@ -291,8 +303,7 @@ void network::UpdateData(display *disp) {
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
-		pos=Result.lastIndexOf(" ");
-		Result.remove(pos,1);
+		Result.trim();
 		pos=Result.lastIndexOf(" ");
 		Result=Result.substring(pos+1);
 		disp->UpdateHzFehler(Result);
