@@ -1,5 +1,5 @@
-#include <Display.h>
 #include <config.h>
+#include <Display.h>
 
 display::display() {
 	//Used to get Memory from System
@@ -48,8 +48,14 @@ void display::begin() {
 	epd.Init();
 	//Fillup framebuffer with startup information
 	paint->Clear(UNCOLORED);
-	paint->DrawStringAt(110, 110, "IOT Display", &INITFONT, COLORED);
-	paint->DrawStringAt(110, 150, "Starting Up", &INITFONT, COLORED);
+#ifdef LANDSCAPE
+	paint->SetRotate(3);
+	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,200-CHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((TYPEPOS/2)-(String("Starting Up").length()/2))*CHARSIZE,200+CHARSIZE,"Starting Up", &INITFONT,COLORED);
+#else
+	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,150-CHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((TYPEPOS/2)-(String("Starting Up").length()/2))*CHARSIZE,150+CHARSIZE,"Starting Up", &INITFONT,COLORED);
+#endif
 	//and Display the frame
 	epd.DisplayFrame(framebuffer);
 }
@@ -64,47 +70,50 @@ void display::LoadFrame() {
 	//clear the painting buffer
 	paint->Clear(UNCOLORED);
 	//draw the frames on the display
+#ifdef LANDSCAPE
+	paint->DrawVerticalLine(1,1,399,COLORED);
+	paint->DrawVerticalLine(299,1,399,COLORED);
+	paint->DrawHorizontalLine(1,1,299,COLORED);
+	paint->DrawHorizontalLine(1,FIRSTLINE+(5*LINESPACE)-1,299,COLORED);
+	paint->DrawHorizontalLine(1,FIRSTLINE+(9*LINESPACE)-1,299,COLORED);
+	paint->DrawHorizontalLine(1,399,299,COLORED);
+#else
 	paint->DrawVerticalLine(1,1,299,COLORED);
 	paint->DrawVerticalLine(399,1,299,COLORED);
 	paint->DrawHorizontalLine(1,1,399,COLORED);
-	//paint->DrawHorizontalLine(1,102,399,COLORED);
 	paint->DrawHorizontalLine(1,FIRSTLINE+(5*LINESPACE)-1,399,COLORED);
 	paint->DrawHorizontalLine(1,FIRSTLINE+(9*LINESPACE)-1,399,COLORED);
 	paint->DrawHorizontalLine(1,299,399,COLORED);
+#endif
 	//draw the text context and values on the display
 	headline="Solarinfo " + date;
-	PrintHeadLine(25,0,headline);
-	//paint->DrawStringAt(25, FIRSTLINE, "SolarInfo", &FONT, COLORED);
-	//paint->DrawStringAt(190, FIRSTLINE, String(date).c_str(), &FONT, COLORED);
+	PrintHeadLine(0,headline);
 	PrintValueLine(3,1,0,String("PV-Ertrag:"),String("W"),String(PV_Leistung));
 	PrintValueLine(3,2,0,String("Verbrauch:"),String("W"),String(PV_Verbrauch));
 	PrintValueLine(3,3,0,String("Batterie:"),String("%"),String(PV_Batterie));
 	PrintValueLine(3,4,0,String("Wallbox:"),String("W"),String(PV_WallboxWatt));
-	PrintHeadLine(30,5,String("Wetter Informationen"));
+	PrintHeadLine(5,String("Wetter Informationen"));
 	PrintValueLine(3,6,0,String("Temperatur:"),String("C"),String(WT_Temperatur,2));
 	PrintValueLine(3,7,0,String("Feuchte:"),String("%"),String(WT_Feuchte,2));
 	PrintValueLine(3,8,1,String("Luftdruck:"),String("hP"),String(WT_Druck,1));
-	PrintHeadLine(82,9,String("Pellets Heizung"));
+	PrintHeadLine(9,String("Pellets Heizung"));
 	//PrintValueLine(3,10,0,String("Gew. Bestand:"),String("T"),String(PL_Gewicht,3));
 	PrintValueLine(3,10,0,String("Bestand:"),String("T"),String(HZ_Lager,3));
-	headline="Status: " + HZ_Fehler;
-	PrintHeadLine(3,11,headline);
-	//PrintValueLine(3,11,0,String("Hzg Status:"),String(""),String(HZ_Fehler));
+	PrintValueLine(3,11,0,String("Hzg Status:"),String(HZ_Fehler),String(""));
 	//Send the Buffer to the Display, and do a refresh with the contents
 	//of this buffer (attention this will switch internal (display) the buffers
 	epd.DisplayFrame(framebuffer);
 	Update=false;
 }
 
-void display::PrintHeadLine(int x, int linenum, String head) {
-	paint->DrawStringAt(x,FIRSTLINE+(linenum*LINESPACE),head.c_str(), &FONT, COLORED);
+void display::PrintHeadLine(int linenum, String head) {
+	paint->DrawStringAt(((TYPEPOS/2)-(head.length()/2))*CHARSIZE,FIRSTLINE+(linenum*LINESPACE),head.c_str(), &INFOFONT, COLORED);
 }
 
 void display::PrintValueLine(int x, int linenum, int left, String name, String type, String value) {
-	paint->DrawStringAt(x, FIRSTLINE + ( linenum * LINESPACE ), name.c_str(), &FONT, COLORED);
-	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(type.length()*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), type.c_str(), &FONT, COLORED);
-	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(2*CHARSIZE)-(value.length()*CHARSIZE)-(left*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), value.c_str(), &FONT, COLORED);
-	//paint->DrawStringAt(3, FIRSTLINE + ( 1 * LINESPACE ), "PV-Ertrag:            W", &FONT, COLORED);
+	paint->DrawStringAt(x, FIRSTLINE + ( linenum * LINESPACE ), name.c_str(), &INFOFONT, COLORED);
+	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(type.length()*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), type.c_str(), &INFOFONT, COLORED);
+	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(2*CHARSIZE)-(value.length()*CHARSIZE)-(left*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), value.c_str(), &INFOFONT, COLORED);
 }
 
 void display::LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht) {

@@ -5,11 +5,12 @@
 #define FHEM_PORT 7072
 #define UPDATE_MINUTE 1
 #define INITFONT Font24
-#define FONT Font24
-//#define FONT Font20
-//#define FONT Font16
-//#define FONT Font12
-//#define FONT Font8
+//#define LANDSCAPE
+#define FONTSIZE_24
+//#define FONTSIZE_20
+//#define FONTSIZE_16
+//#define FONTSIZE_12
+//#define FONTSIZE_8
 
 #endif
 

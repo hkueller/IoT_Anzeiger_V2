@@ -9,14 +9,55 @@
 #define UNCOLORED   1
 
 #define FIRSTLINE   5
-#if FONT == Font24
+#ifdef FONTSIZE_24
+#define INFOFONT Font24
 #define LINESPACE   24
 #define CHARSIZE    17
+#ifdef LANDSCAPE
+#define TYPEPOS     17
+#else
 #define TYPEPOS	    23
-#elif FONT == Font20
+#endif
+#endif
+#ifdef FONTSIZE_20
+#define INFOFONT Font20
 #define LINESPACE   20
-#define CHARSIZE    15
-#define TYPEPOS	    24
+#define CHARSIZE    14
+#ifdef LANDSCAPE
+#define TYPEPOS	    21
+#else
+#define TYPEPOS	    28
+#endif
+#endif
+#ifdef FONTSIZE_16
+#define INFOFONT Font16
+#define LINESPACE   16
+#define CHARSIZE    11
+#ifdef LANDSCAPE
+#define TYPEPOS     27
+#else
+#define TYPEPOS	    36
+#endif
+#endif
+#ifdef FONTSIZE_12
+#define INFOFONT Font12
+#define LINESPACE   12
+#define CHARSIZE    7
+#ifdef LANDSCAPE
+#define TYPEPOS     42
+#else
+#define TYPEPOS	    57
+#endif
+#endif
+#ifdef FONTSIZE_8
+#define INFOFONT Font8
+#define LINESPACE   8
+#define CHARSIZE    5
+#ifdef LANDSCAPE
+#define TYPEPOS     59
+#else
+#define TYPEPOS	    79
+#endif
 #endif
 
 class display {
@@ -26,7 +67,7 @@ public:
 	void begin();
 	void LoadFrame();
 	void LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
-	void PrintHeadLine(int x, int linenum, String head);
+	void PrintHeadLine(int linenum, String head);
 	void PrintValueLine(int x, int linenum, int left, String name, String type, String value);
 	void UpdatePVLeistung(long leistung);
 	void UpdatePVLeistung_ost(long verbrauch);
