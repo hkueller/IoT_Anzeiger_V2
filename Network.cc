@@ -416,6 +416,19 @@ void network::handleInc(display *disp) {
 							client.print(command.c_str());
 							client.print(" Need at least one Argument");
 						}
+					} else if ( ! strcmp(command.c_str(), "SetPvWallboxWatt" )) {
+						if ( Argument.length() > 0 ) {
+							client.print(F("I will set WallboxWatt to: "));
+							client.print(Argument);
+							client.print("\n");
+							disp->UpdatePVWallboxWatt((long) Argument.toDouble());
+							disp->EnableUpdate();
+						} else {
+							client.print(F("Command "));
+							client.print(command.c_str());
+							client.print(" Need at least one Argument");
+						}
+						
 					} else if ( ! strcmp(command.c_str(), "SetPVHeater" )) {
 						if ( Argument.length() > 0 ) {
 							client.print(F("I will set PVHeater to: "));
@@ -472,6 +485,18 @@ void network::handleInc(display *disp) {
 							client.print(command.c_str());
 							client.print(" Need at least one Argument");
 						}
+					} else if ( ! strcmp(command.c_str(), "SetHzStatus" ) ) {
+						if ( Argument.length() > 0 ) {
+							client.print(F("I will set Heater state to: "));
+							client.print(Argument);
+							client.print("\n");
+							disp->UpdateHzFehler(Argument);
+							disp->EnableUpdate();
+						} else {
+							client.print(F("Command "));
+							client.print(command.c_str());
+							client.print(" Need at least one Argument");
+						}
 					} else if ( ! strcmp(command.c_str(), "SetDate" ) ) {
 						if ( Argument.length() > 0 ) {
 							client.print(F("I will set Date to: "));
@@ -496,6 +521,7 @@ void network::handleInc(display *disp) {
 						client.print(F("SetLeistungOst Value\n"));
 						client.print(F("SetLeistungWest Value\n"));
 						client.print(F("SetLeistungBatt Value\n"));
+					        client.print(F("SetPvWallboxWatt\n"));
 						client.print(F("SetLeistungGrid Value\n"));
 					        client.print(F("SetVerbrauch Value\n"));
 						client.print(F("SetBatterie Value\n"));
@@ -504,6 +530,7 @@ void network::handleInc(display *disp) {
 						client.print(F("SetFeuchte Value\n"));
 						client.print(F("SetDruck Value\n"));
 						client.print(F("SetPellets Value\n"));
+					        client.print(F("SetHzStatus\n"));
 						client.print(F("SetDate Value\n"));
 						client.print(F("exit\n"));
 					} else if ( ! strcmp(currentline.c_str(), "exit" ) ) {
