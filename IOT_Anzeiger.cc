@@ -33,8 +33,9 @@ network net;
 
 void setup() {
 	// put your setup code here, to run once:
-	net.begin();
 	disp.begin();
+	net.begin();
+	disp.NetDone();
 	net.UpdateData(&disp);
 	disp.updatelast();
 }
