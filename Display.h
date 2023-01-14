@@ -65,6 +65,7 @@ public:
 	display();
 	display(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
 	void begin();
+	void NetDone();
 	void LoadFrame();
 	void LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
 	void PrintHeadLine(int linenum, String head);

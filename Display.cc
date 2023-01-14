@@ -60,6 +60,21 @@ void display::begin() {
 	epd.DisplayFrame(framebuffer);
 }
 
+void display::NetDone() {
+	paint->Clear(UNCOLORED);
+#ifdef LANDSCAPE
+	paint->SetRotate(3);
+#define WIDTH 200
+#else
+#define WIDTH 150
+#endif
+	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,WIDTH-CHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((TYPEPOS/2)-(String("Network Online").length()/2))*CHARSIZE,WIDTH+CHARSIZE,"Network Online", &INITFONT,COLORED);
+	//and Display the frame
+	epd.DisplayFrame(framebuffer);
+}
+
+
 void display::LoadFrame() {
 	//some later needed vars
 	//for calculating the position
