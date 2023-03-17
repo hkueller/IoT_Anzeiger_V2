@@ -19,9 +19,10 @@ private:
 public:
 	network();
 	void begin();
-	void testNet();
+	void testNet(display *disp);
 	void handleWeb(display *disp);
 	void UpdateData(display *disp);
+	int FhemGetData(String *result,const String device, const String reading, long unsigned int *lasttime);
 	WiFiClient * FhemConnect();
 	void handleInc(display *disp);
 	void handleOTA();

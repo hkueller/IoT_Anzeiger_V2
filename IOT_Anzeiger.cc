@@ -42,7 +42,7 @@ void setup() {
 
 void loop() {
 	// put your main code here, to run repeatedly:
-	net.testNet();
+	net.testNet(&disp);
 	net.handleOTA();
 	net.handleWeb(&disp);
 	if ( millis() - disp.getLastTime() > UPDATE_MINUTE * 1000 * 60) {

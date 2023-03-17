@@ -31,9 +31,10 @@ void network::begin() {
 	yield();
 }
 
-void network::testNet() {
+void network::testNet(display *disp) {
 	int wifi_retry = 0;
 	while(WiFi.status() != WL_CONNECTED && wifi_retry < 5 ) {
+		disp->NetOffline();
 		WiFi.disconnect();
 		wifimanager.setConfigPortalTimeout(300);
 		wifimanager.autoConnect("AutoConnectAP");
@@ -179,7 +180,6 @@ WiFiClient * network::FhemConnect() {
 
 void network::UpdateData(display *disp) {
 	String Result;
-	int pos;
 	unsigned long lasttime;
 
 	if(!client->connected()) {
@@ -188,128 +188,98 @@ void network::UpdateData(display *disp) {
 			return;
 		}
 	}
+	while(client->available()) {
+		Result = client->readStringUntil('\n');
+	}
 	client->print("{qx(date +%d\".\"%m\" \"%H\":\"%M)}\n");
 	lasttime=millis();
 	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
+	if(client->available()) {
 		Result = client->readStringUntil('\n');
 		Result = Result.substring(0,11);
 		disp->SetDate(Result);
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list E3DC pv_gesammt_leistung pv_ost_leistung pv_west_leistung batterie_ladeleistung netzbezug eigenverbrauch batterie_fuellstand Wallboxwatt\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("pv_gesammt_leistung"), &lasttime) == 1)  {
 		disp->UpdatePVLeistung((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("pv_ost_leistung"), &lasttime) == 1 ) {
 		disp->UpdatePVLeistung_ost((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("pv_west_leistung"), &lasttime) == 1 ) {
 		disp->UpdatePVLeistung_west((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("batterie_ladeleistung"), &lasttime) == 1 ) {
 		disp->UpdatePVLeistung_batt((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("netzbezug"), &lasttime) == 1 ) {
 		disp->UpdatePVLeistung_grid((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("eigenverbrauch"), &lasttime) == 1 ) {
 		disp->UpdatePVVerbrauch((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("batterie_fuellstand"), &lasttime) == 1 ) {
 		disp->UpdatePVBatterie(Result.toInt());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("E3DC"), String("Wallboxwatt"), &lasttime) == 1 ) {
 		disp->UpdatePVWallboxWatt((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list kg_hzg_pvheat Leistung\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	if (FhemGetData(&Result, String("kg_hzg_pvheat"), String("Leistung"), &lasttime) == 1 ) {
 		disp->UpdatePVHeizstab((long) Result.toDouble());
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list gt_carport_wetter temperature humidity pressure\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	if (FhemGetData(&Result, String("gt_carport_wetter"), String("temperature"), &lasttime) == 1 ) {
 		disp->UpdateWTTemperatur(Result.toFloat());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("gt_carport_wetter"), String("humidity"), &lasttime) == 1 ) {
 		disp->UpdateWTFeuchte(Result.toFloat());
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	}
+	if (FhemGetData(&Result, String("gt_carport_wetter"), String("pressure"), &lasttime) == 1 ) {
 		disp->UpdateWTDruck(Result.toFloat());
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list kg_heizung_pellets pellets\n");
-	//client->print("list kg_hzg_brenner lager_kg\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	if (FhemGetData(&Result, String("kg_heizung_pellets"), String("pellets"), &lasttime) == 1 ) {
 		disp->UpdatePLGewicht(Result.toFloat());
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list kg_hzg_brenner lager_kg\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	if (FhemGetData(&Result, String("kg_hzg_brenner"), String("lager_kg"), &lasttime) == 1 ) {
 		disp->UpdateHzLager(Result.toFloat()/1000);
-		Result = client->readStringUntil('\n');
 	}
-	client->print("list kg_hzg_brenner Stoerungs_nummer\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result.trim();
-		pos=Result.lastIndexOf(" ");
-		Result=Result.substring(pos+1);
+	if (FhemGetData(&Result, String("kg_hzg_brenner"), String("Stoerungs_nummer"), &lasttime) == 1 ) {
 		disp->UpdateHzFehler(Result);
-		Result = client->readStringUntil('\n');
 	}
+
 	disp->EnableUpdate();
+	while(!client->available() && millis() - lasttime < 1000) {yield();}
+	client->print("quit\n");
+	while(!client->available() && millis() - lasttime < 1000) {yield();}
+}
+
+int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
+	String buffer;
+	int pos;
+
+	*result="";
+	while(client->available()) {
+		buffer = client->readStringUntil('\n');
+	}
+	buffer = "list " + device + " " +  reading + '\n';
+	client->print(buffer);
+	*lasttime=millis();
+	while(!client->available() && millis() - *lasttime < 1000) {yield();}
+	if(client->available()) {
+		*result = client->readStringUntil('\n');
+		pos=result->length();
+		if(pos == 0) {
+			return(0);
+		}
+		result->trim();
+		pos=result->lastIndexOf(" ");
+		*result=result->substring(pos+1);
+	}
+	while(client->available()) {
+		buffer = client->readStringUntil('\n');
+	}
+	return(1);
 }
 
 void network::handleInc(display *disp) {

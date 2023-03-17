@@ -9,6 +9,14 @@
 #define UNCOLORED   1
 
 #define FIRSTLINE   5
+#define INITLINESPACE 24
+#define INITCHARSIZE 17
+#ifdef LANDSCAPE
+#define INITTYPEPOS 17
+#else
+#define INITTYPEPOS 23
+#endif
+
 #ifdef FONTSIZE_24
 #define INFOFONT Font24
 #define LINESPACE   24
@@ -66,6 +74,7 @@ public:
 	display(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
 	void begin();
 	void NetDone();
+	void NetOffline();
 	void LoadFrame();
 	void LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
 	void PrintHeadLine(int linenum, String head);

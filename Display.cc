@@ -50,11 +50,11 @@ void display::begin() {
 	paint->Clear(UNCOLORED);
 #ifdef LANDSCAPE
 	paint->SetRotate(3);
-	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,200-CHARSIZE,"IOT Display", &INITFONT,COLORED);
-	paint->DrawStringAt(((TYPEPOS/2)-(String("Starting Up").length()/2))*CHARSIZE,200+CHARSIZE,"Starting Up", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("IOT Display").length()/2))*INITCHARSIZE,200-INITCHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("Starting Up").length()/2))*INITCHARSIZE,200+INITCHARSIZE,"Starting Up", &INITFONT,COLORED);
 #else
-	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,150-CHARSIZE,"IOT Display", &INITFONT,COLORED);
-	paint->DrawStringAt(((TYPEPOS/2)-(String("Starting Up").length()/2))*CHARSIZE,150+CHARSIZE,"Starting Up", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("IOT Display").length()/2))*INITCHARSIZE,150-INITCHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("Starting Up").length()/2))*INITCHARSIZE,150+INITCHARSIZE,"Starting Up", &INITFONT,COLORED);
 #endif
 	//and Display the frame
 	epd.DisplayFrame(framebuffer);
@@ -68,8 +68,22 @@ void display::NetDone() {
 #else
 #define WIDTH 150
 #endif
-	paint->DrawStringAt(((TYPEPOS/2)-(String("IOT Display").length()/2))*CHARSIZE,WIDTH-CHARSIZE,"IOT Display", &INITFONT,COLORED);
-	paint->DrawStringAt(((TYPEPOS/2)-(String("Network Online").length()/2))*CHARSIZE,WIDTH+CHARSIZE,"Network Online", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("IOT Display").length()/2))*INITCHARSIZE,WIDTH-INITCHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("Network Online").length()/2))*INITCHARSIZE,WIDTH+INITCHARSIZE,"Network Online", &INITFONT,COLORED);
+	//and Display the frame
+	epd.DisplayFrame(framebuffer);
+}
+
+void display::NetOffline() {
+	paint->Clear(UNCOLORED);
+#ifdef LANDSCAPE
+	paint->SetRotate(3);
+#define WIDTH 200
+#else
+#define WIDTH 150
+#endif
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("IOT Display").length()/2))*INITCHARSIZE,WIDTH-INITCHARSIZE,"IOT Display", &INITFONT,COLORED);
+	paint->DrawStringAt(((INITTYPEPOS/2)-(String("Network Offline").length()/2))*INITCHARSIZE,WIDTH+INITCHARSIZE,"Network Offline", &INITFONT,COLORED);
 	//and Display the frame
 	epd.DisplayFrame(framebuffer);
 }
