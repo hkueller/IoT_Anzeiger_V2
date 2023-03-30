@@ -7,6 +7,7 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <Display.h>
+#include <time.h>
 #include <config.h>
 
 class network {
@@ -16,6 +17,7 @@ private:
 	WiFiClient *client;
 	WiFiServer *netvalues;
 	WiFiManager wifimanager;
+	tm zeit;
 public:
 	network();
 	void begin();
@@ -26,5 +28,13 @@ public:
 	WiFiClient * FhemConnect();
 	void handleInc(display *disp);
 	void handleOTA();
+	void StoreTimeLastRead();
+	String twodigit(int number);
+	int ReturnYear();
+	int ReturnMonth();
+	int ReturnDay();
+	int ReturnHour();
+	int ReturnMinutes();
+	String ReturnSeconds();
 };
 #endif

@@ -23,6 +23,7 @@ void network::begin() {
 		}
 	});
   	ArduinoOTA.begin();
+	configTime(MY_TZ, MY_NTP_SERVER);
 	server->begin();
 	netvalues->begin();
 	server->setNoDelay(true);
@@ -56,7 +57,7 @@ void network::handleWeb(display *disp) {
 
 	//Let us show if some client 
 	//is available
-	client = server->available();
+	client = server->accept();
 	if (client) {
 		//do this only if we have a client
 		String currentline = "";
@@ -94,7 +95,17 @@ void network::handleWeb(display *disp) {
 						temp+="</H1><br><br><center><table border=0 cellpadding=\"8\" cellspacing=\"0\" width=\"80%\"><tbody>\n";
 						//get the information for the last data update
 						temp+="<tr><td>Last Update:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetDate());
+						temp+=twodigit(zeit.tm_mday);
+						temp+=".";
+						temp+=twodigit(zeit.tm_mon+1);
+						temp+=".";
+						temp+=zeit.tm_year+1900;
+						temp+=" ";
+						temp+=twodigit(zeit.tm_hour);
+						temp+=":";
+						temp+=twodigit(zeit.tm_min);
+						temp+=".";
+						temp+=twodigit(zeit.tm_sec);
 						temp+="</td></tr><tr><td>Haus Verbrauch:</td><td style=\"text-align:right\">\n";
 						temp+=String(disp->GetPVVerbrauch());
 						temp+=" W";
@@ -191,17 +202,6 @@ void network::UpdateData(display *disp) {
 	while(client->available()) {
 		Result = client->readStringUntil('\n');
 	}
-	client->print("{qx(date +%d\".\"%m\" \"%H\":\"%M)}\n");
-	lasttime=millis();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
-	if(client->available()) {
-		Result = client->readStringUntil('\n');
-		Result = Result.substring(0,11);
-		disp->SetDate(Result);
-	}
-	while(client->available()) {
-		Result = client->readStringUntil('\n');
-	}
 	if (FhemGetData(&Result, String("E3DC"), String("pv_gesammt_leistung"), &lasttime) == 1)  {
 		disp->UpdatePVLeistung((long) Result.toDouble());
 	}
@@ -247,11 +247,19 @@ void network::UpdateData(display *disp) {
 	if (FhemGetData(&Result, String("kg_hzg_brenner"), String("Stoerungs_nummer"), &lasttime) == 1 ) {
 		disp->UpdateHzFehler(Result);
 	}
-
+	StoreTimeLastRead();
+	Result=twodigit(zeit.tm_mday);
+	Result+=".";
+	Result+=twodigit(zeit.tm_mon+1);
+	Result+=" ";
+	Result+=twodigit(zeit.tm_hour);
+	Result+=":";
+	Result+=twodigit(zeit.tm_min);
+	disp->SetDate(Result);
 	disp->EnableUpdate();
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
+	while(!client->available() && millis() - lasttime < WAITFHEMAW) {yield();}
 	client->print("quit\n");
-	while(!client->available() && millis() - lasttime < 1000) {yield();}
+	while(!client->available() && millis() - lasttime < WAITFHEMAW) {yield();}
 }
 
 int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
@@ -265,7 +273,7 @@ int network::FhemGetData(String *result, const String device, const String readi
 	buffer = "list " + device + " " +  reading + '\n';
 	client->print(buffer);
 	*lasttime=millis();
-	while(!client->available() && millis() - *lasttime < 1000) {yield();}
+	while(!client->available() && millis() - *lasttime < WAITFHEMAW) {yield();}
 	if(client->available()) {
 		*result = client->readStringUntil('\n');
 		pos=result->length();
@@ -288,7 +296,7 @@ void network::handleInc(display *disp) {
 	String Argument = "";
 	String currentline = "";
 
-	client = netvalues->available();
+	client = netvalues->accept();
 	client.print(F("$ "));
 	while(client.connected()) {
 		if (client.available()) {
@@ -540,4 +548,54 @@ void network::handleInc(display *disp) {
 
 void network::handleOTA() {
 	ArduinoOTA.handle();
+}
+
+void network::StoreTimeLastRead() {
+        time_t now;
+
+        now = time(nullptr);
+        localtime_r(&now, &zeit);
+}
+
+int network::ReturnYear() {
+	return(zeit.tm_year+1990);
+}
+
+int network::ReturnMonth() {
+	return(zeit.tm_mon);
+}
+
+int network::ReturnDay() {
+	return(zeit.tm_mday);
+}
+
+int network::ReturnHour() {
+	return(zeit.tm_hour);
+}
+
+int network::ReturnMinutes() {
+	return(zeit.tm_min);
+}
+
+String network::ReturnSeconds() {
+	String seconds;
+
+	if ( zeit.tm_sec < 0 ) {
+		seconds=0;
+		seconds+=zeit.tm_sec;
+	} else {
+		seconds=zeit.tm_sec;
+	}
+	return(seconds);
+}
+
+String network::twodigit(int number) {
+	String buffer;
+
+	buffer="";
+	if ( number < 10 ) {
+		buffer+="0";
+	}
+	buffer+=number;
+	return(buffer);
 }
