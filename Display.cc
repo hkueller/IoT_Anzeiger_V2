@@ -22,7 +22,7 @@ display::display() {
 	lasttime = millis() - ( UPDATE_MINUTE * 1000 * 60 );
 }
 
-display::display(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht) {
+display::display(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht) {
 	//Used to get Memory from System
 	void *pd;
 
@@ -126,8 +126,8 @@ void display::LoadFrame() {
 	PrintValueLine(3,7,0,String("Feuchte:"),String("%"),String(WT_Feuchte,2));
 	PrintValueLine(3,8,1,String("Luftdruck:"),String("hP"),String(WT_Druck,1));
 	PrintHeadLine(9,String("Pellets Heizung"));
-	PrintValueLine(3,10,0,String("Gew. Bestand:"),String("T"),String(PL_Gewicht,3));
-	//PrintValueLine(3,10,0,String("Bestand:"),String("T"),String(HZ_Lager,3));
+	//PrintValueLine(3,10,0,String("Gew. Bestand:"),String("T"),String(PL_Gewicht,3));
+	PrintValueLine(3,10,0,String("Bestand:"),String("T"),String(HZ_Lager,3));
 	PrintValueLine(3,11,0,String("Hzg Status:"),String(HZ_Fehler),String(""));
 	//Send the Buffer to the Display, and do a refresh with the contents
 	//of this buffer (attention this will switch internal (display) the buffers
@@ -145,7 +145,7 @@ void display::PrintValueLine(int x, int linenum, int left, String name, String t
 	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(2*CHARSIZE)-(value.length()*CHARSIZE)-(left*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), value.c_str(), &INFOFONT, COLORED);
 }
 
-void display::LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht) {
+void display::LoadFrame(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht) {
 	//Just assign the given Values
 	PV_Leistung=leistung;
 	PV_Verbrauch=verbrauch;
@@ -181,7 +181,7 @@ void display::UpdatePVVerbrauch(long verbrauch) {
 	//Just assign new value
 	PV_Verbrauch=verbrauch;
 }
-void display::UpdatePVBatterie(int batterie) {
+void display::UpdatePVBatterie(float batterie) {
 	//Just assign new value
 	PV_Batterie=batterie;
 }
@@ -231,7 +231,7 @@ long display::GetPVLeistung_grid() {
 long display::GetPVVerbrauch() {
 	return(PV_Verbrauch);
 }
-int display::GetPVBatterie() {
+float display::GetPVBatterie() {
 	return(PV_Batterie);
 }
 long display::GetPVWallboxWatt() {

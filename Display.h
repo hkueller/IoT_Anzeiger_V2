@@ -71,12 +71,12 @@
 class display {
 public:
 	display();
-	display(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
+	display(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht);
 	void begin();
 	void NetDone();
 	void NetOffline();
 	void LoadFrame();
-	void LoadFrame(long leistung, long verbrauch, int batterie, float temp, float feuchte, float druck, float gewicht);
+	void LoadFrame(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht);
 	void PrintHeadLine(int linenum, String head);
 	void PrintValueLine(int x, int linenum, int left, String name, String type, String value);
 	void UpdatePVLeistung(long leistung);
@@ -85,7 +85,7 @@ public:
 	void UpdatePVLeistung_batt(long verbrauch);
 	void UpdatePVLeistung_grid(long verbrauch);
 	void UpdatePVVerbrauch(long verbrauch);
-	void UpdatePVBatterie(int batterie);
+	void UpdatePVBatterie(float batterie);
 	void UpdatePVWallboxWatt(long WallboxWatt);
 	void UpdatePVHeizstab(long leistung);
 	void UpdateWTTemperatur(float temperatur);
@@ -101,7 +101,7 @@ public:
 	long GetPVLeistung_grid();
 	long GetPVWallboxWatt();
 	long GetPVVerbrauch();
-	int GetPVBatterie();
+	float GetPVBatterie();
 	long GetPVHeizstab();
 	float GetWTTemperatur();
 	float GetWTFeuchte();
@@ -124,7 +124,7 @@ private:
 	long PV_Leistung_grid;
 	long PV_Verbrauch;
 	long PV_Heizstab;
-	int PV_Batterie;
+	float PV_Batterie;
 	long PV_WallboxWatt;
 	float WT_Temperatur;
 	float WT_Feuchte;

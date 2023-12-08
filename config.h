@@ -19,4 +19,4 @@
 //#define FONTSIZE_8
 #define WAITFHEMAW 1000
 #endif
-
+#define APSID IOTAnzeiger

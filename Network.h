@@ -21,7 +21,7 @@ private:
 public:
 	network();
 	void begin();
-	void testNet(display *disp);
+	int testNet(display *disp);
 	void handleWeb(display *disp);
 	void UpdateData(display *disp);
 	int FhemGetData(String *result,const String device, const String reading, long unsigned int *lasttime);

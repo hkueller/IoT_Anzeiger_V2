@@ -11,7 +11,7 @@ network::network() {
 void network::begin() {
 	//wifimanager.resetSettings();
 	wifimanager.setConfigPortalTimeout(300);
-	if( ! wifimanager.autoConnect("IOT_Display_AP") ) {
+	if( ! wifimanager.autoConnect("IOTAnzeiger") ) {
 		ESP.restart();
 	}
 	ArduinoOTA.onStart([]() {
@@ -32,7 +32,8 @@ void network::begin() {
 	yield();
 }
 
-void network::testNet(display *disp) {
+int network::testNet(display *disp) {
+	int rc=0;
 	int wifi_retry = 0;
 	while(WiFi.status() != WL_CONNECTED && wifi_retry < 5 ) {
 		disp->NetOffline();
@@ -41,10 +42,22 @@ void network::testNet(display *disp) {
 		wifimanager.autoConnect("AutoConnectAP");
 		delay(100);
 		wifi_retry++;
+		rc=1;
 	}
 	if(wifi_retry >= 5) {
 		ESP.restart();
 	}
+	if(wifi_retry > 0) {
+  		ArduinoOTA.begin();
+		configTime(MY_TZ, MY_NTP_SERVER);
+		server->begin();
+		netvalues->begin();
+		server->setNoDelay(true);
+		netvalues->setNoDelay(true);
+		client=network::FhemConnect();
+		yield();
+	}
+	return(rc);
 }
 
 //the minimalistic webserver
@@ -221,7 +234,7 @@ void network::UpdateData(display *disp) {
 		disp->UpdatePVVerbrauch((long) Result.toDouble());
 	}
 	if (FhemGetData(&Result, String("E3DC"), String("batterie_fuellstand"), &lasttime) == 1 ) {
-		disp->UpdatePVBatterie(Result.toInt());
+		disp->UpdatePVBatterie(Result.toDouble());
 	}
 	if (FhemGetData(&Result, String("E3DC"), String("Wallboxwatt"), &lasttime) == 1 ) {
 		disp->UpdatePVWallboxWatt((long) Result.toDouble());
@@ -229,7 +242,7 @@ void network::UpdateData(display *disp) {
 	if (FhemGetData(&Result, String("kg_hzg_pvheat"), String("Leistung"), &lasttime) == 1 ) {
 		disp->UpdatePVHeizstab((long) Result.toDouble());
 	}
-	if (FhemGetData(&Result, String("gt_carport_wetter"), String("temperature"), &lasttime) == 1 ) {
+	if (FhemGetData(&Result, String("gt_carport_wetter"), String("av_temp"), &lasttime) == 1 ) {
 		disp->UpdateWTTemperatur(Result.toFloat());
 	}
 	if (FhemGetData(&Result, String("gt_carport_wetter"), String("humidity"), &lasttime) == 1 ) {
