@@ -35,7 +35,6 @@
 #define DC_PIN          0
 #define CS_PIN          15
 #define BUSY_PIN        4
-#define PWR_PIN         1
 
 class EpdIf {
 public:
