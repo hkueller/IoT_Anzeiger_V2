@@ -7,12 +7,20 @@ display::display() {
 
 	//init the privat values with zero
 	PV_Leistung=0;
+	PV_Leistung_ost=0;
+	PV_Leistung_west=0;
+	PV_Leistung_batt=0;
+	PV_Leistung_grid=0;
 	PV_Verbrauch=0;
+	PV_Heizstab=0;
 	PV_Batterie=0;
+	PV_WallboxWatt=0;
 	WT_Temperatur=0;
 	WT_Feuchte=0;
 	WT_Druck=0;
 	PL_Gewicht=0;
+	HZ_Lager=0;
+	HZ_Fehler="";
 	//Request memory for the framebuffer
 	framebuffer=(unsigned char *) malloc(15000*sizeof(unsigned char));
 	//Request Space for paint class
@@ -22,18 +30,26 @@ display::display() {
 	lasttime = millis() - ( UPDATE_MINUTE * 1000 * 60 );
 }
 
-display::display(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht) {
+display::display(long leistung, long leistung_ost, long leistung_west, long leistung_batt, long leistung_grid, long verbrauch, long leistung_heizstab, float batterie, long leistung_wallbox, float temp, float feuchte, float druck, float gewicht, float hz_gewicht, String hz_fehler) {
 	//Used to get Memory from System
 	void *pd;
 
 	//Initialize the private Vars with the given Values
 	PV_Leistung=leistung;
+	PV_Leistung_ost=leistung_ost;
+	PV_Leistung_west=leistung_west;
+	PV_Leistung_batt=leistung_batt;
+	PV_Leistung_grid=leistung_grid;
 	PV_Verbrauch=verbrauch;
+	PV_Heizstab=leistung_heizstab;
 	PV_Batterie=batterie;
+	PV_WallboxWatt=leistung_wallbox;
 	WT_Temperatur=temp;
 	WT_Feuchte=feuchte;
 	WT_Druck=druck;
 	PL_Gewicht=gewicht;
+	HZ_Lager=hz_gewicht;
+	HZ_Fehler=hz_fehler;
 	//alloc space for the Framebuffer
 	framebuffer=(unsigned char *) malloc(15000*sizeof(unsigned char));
 	//alloc space for the painting class
@@ -145,15 +161,17 @@ void display::PrintValueLine(int x, int linenum, int left, String name, String t
 	paint->DrawStringAt((TYPEPOS*CHARSIZE)-(2*CHARSIZE)-(value.length()*CHARSIZE)-(left*CHARSIZE), FIRSTLINE + (linenum * LINESPACE), value.c_str(), &INFOFONT, COLORED);
 }
 
-void display::LoadFrame(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht) {
+void display::LoadFrame(long leistung, long verbrauch, float batterie, long wallbox, float temp, float feuchte, float druck, float gewicht, String hz_status) {
 	//Just assign the given Values
 	PV_Leistung=leistung;
 	PV_Verbrauch=verbrauch;
 	PV_Batterie=batterie;
+	PV_WallboxWatt=wallbox;
 	WT_Temperatur=temp;
 	WT_Feuchte=feuchte;
 	WT_Druck=druck;
 	PL_Gewicht=gewicht;
+	HZ_Fehler=hz_status;
 	//and redraw the screen on E-Paper
 	LoadFrame();
 }

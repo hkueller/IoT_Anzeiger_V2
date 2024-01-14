@@ -71,12 +71,12 @@
 class display {
 public:
 	display();
-	display(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht);
+	display(long leistung, long leistung_ost, long leistung_west, long leistung_batt, long leistung_grid, long verbrauch, long leistung_heizstab, float batterie, long leistung_wallbox, float temp, float feuchte, float druck, float gewicht, float hz_gewicht, String hz_fehler);
 	void begin();
 	void NetDone();
 	void NetOffline();
 	void LoadFrame();
-	void LoadFrame(long leistung, long verbrauch, float batterie, float temp, float feuchte, float druck, float gewicht);
+	void LoadFrame(long leistung, long verbrauch, float batterie, long wallbox, float temp, float feuchte, float druck, float gewicht, String hz_status);
 	void PrintHeadLine(int linenum, String head);
 	void PrintValueLine(int x, int linenum, int left, String name, String type, String value);
 	void UpdatePVLeistung(long leistung);
