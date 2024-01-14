@@ -31,30 +31,89 @@
 display disp;
 network net;
 
+
 void setup() {
 	// put your setup code here, to run once:
+#ifdef DEBUG
+	Serial.begin(115200);
+	Serial.println("Setup starting");
+	Serial.flush();
+#endif
 	disp.begin();
+#ifdef DEBUG
+	Serial.begin(115200);
+	Serial.println("Starting Net");
+	Serial.flush();
+#endif
 	net.begin();
-	disp.NetDone();
+#ifdef DEBUG
+	Serial.println("Net started");
+	Serial.flush();
+#endif
+	disp.NetDone();  
+#ifdef DEBUG
+	Serial.println("Starting Data Reading");
+	Serial.flush();
+#endif
 	net.UpdateData(&disp);
 	disp.updatelast();
+#ifdef DEBUG
+	Serial.println("Setup completed");
+	Serial.flush();
+#endif
 }
 
 void loop() {
 	// put your main code here, to run repeatedly:
 	if ( net.testNet(&disp) == 1 ) {
+#ifdef DEBUG
+		Serial.println("Network Restarted\nLoading NetScreen");
+		Serial.flush();
+#endif
 		disp.NetDone();
+#ifdef DEBUG
+		Serial.println("Loading FHEM Data");
+		Serial.flush();
+#endif
 		net.UpdateData(&disp);
+#ifdef DEBUG
+		Serial.println("Updating Display");
+		Serial.flush();
+#endif
 		disp.updatelast();
 	}
+#ifdef DEBUG
+	Serial.println("Running OTA");
+	Serial.flush();
+#endif
 	net.handleOTA();
+#ifdef DEBUG
+	Serial.println("Running WEB");
+	Serial.flush();
+#endif
 	net.handleWeb(&disp);
 	if ( millis() - disp.getLastTime() > UPDATE_MINUTE * 1000 * 60) {
+#ifdef DEBUG
+		Serial.println("Updating Data");
+		Serial.flush();
+#endif
 		net.UpdateData(&disp);
 	}
+#ifdef DEBUG
+		Serial.println("Running Telnet");
+		Serial.flush();
+#endif
 	net.handleInc(&disp);
 	if ( disp.GetUpdate() == true) {
+#ifdef DEBUG
+		Serial.println("Update Display");
+		Serial.flush();
+#endif
 		disp.LoadFrame();
+#ifdef DEBUG
+		Serial.println("Update Updatetime");
+		Serial.flush();
+#endif
 		disp.updatelast();
 	}
 }
