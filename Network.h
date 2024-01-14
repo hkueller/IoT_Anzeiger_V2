@@ -14,7 +14,7 @@ class network {
 private:
 	String header;
 	WiFiServer *server;
-	WiFiClient *client;
+	WiFiClient *fhemclient=0;
 	WiFiServer *netvalues;
 	WiFiManager wifimanager;
 	tm zeit;
@@ -25,7 +25,9 @@ public:
 	void handleWeb(display *disp);
 	void UpdateData(display *disp);
 	int FhemGetData(String *result,const String device, const String reading, long unsigned int *lasttime);
-	WiFiClient * FhemConnect();
+	//WiFiClient * FhemConnect();
+	int FhemConnect();
+	void FhemDisconnect();
 	void handleInc(display *disp);
 	void handleOTA();
 	void StoreTimeLastRead();
