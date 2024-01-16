@@ -4,6 +4,7 @@
 #include "epd4in2.h"
 #include "imagedata.h"
 #include "epdpaint.h"
+#include <Data.h>
 
 #define COLORED     0
 #define UNCOLORED   1
@@ -73,42 +74,10 @@ public:
 	display();
 	display(long leistung, long leistung_ost, long leistung_west, long leistung_batt, long leistung_grid, long verbrauch, long leistung_heizstab, float batterie, long leistung_wallbox, float temp, float feuchte, float druck, float gewicht, float hz_gewicht, String hz_fehler);
 	void begin();
-	void NetDone();
-	void NetOffline();
-	void LoadFrame();
-	void LoadFrame(long leistung, long verbrauch, float batterie, long wallbox, float temp, float feuchte, float druck, float gewicht, String hz_status);
+	void Message(String message);
+	void LoadFrame(smarthome *data);
 	void PrintHeadLine(int linenum, String head);
 	void PrintValueLine(int x, int linenum, int left, String name, String type, String value);
-	void UpdatePVLeistung(long leistung);
-	void UpdatePVLeistung_ost(long verbrauch);
-	void UpdatePVLeistung_west(long verbrauch);
-	void UpdatePVLeistung_batt(long verbrauch);
-	void UpdatePVLeistung_grid(long verbrauch);
-	void UpdatePVVerbrauch(long verbrauch);
-	void UpdatePVBatterie(float batterie);
-	void UpdatePVWallboxWatt(long WallboxWatt);
-	void UpdatePVHeizstab(long leistung);
-	void UpdateWTTemperatur(float temperatur);
-	void UpdateWTFeuchte(float feuchte);
-	void UpdateWTDruck(float Druck);
-	void UpdatePLGewicht(float Gewicht);
-	void UpdateHzLager(float Lager);
-	void UpdateHzFehler(String fehler);
-	long GetPVLeistung();
-	long GetPVLeistung_ost();
-	long GetPVLeistung_west();
-	long GetPVLeistung_batt();
-	long GetPVLeistung_grid();
-	long GetPVWallboxWatt();
-	long GetPVVerbrauch();
-	float GetPVBatterie();
-	long GetPVHeizstab();
-	float GetWTTemperatur();
-	float GetWTFeuchte();
-	float GetWTDruck();
-	float GetPLGewicht();
-	float GetHzLager();
-	String GetHzFehler();
 	void EnableUpdate();
 	bool GetUpdate();
 	unsigned int getLastTime();
@@ -117,21 +86,6 @@ public:
 	String GetDate();
 
 private:
-	long PV_Leistung;
-	long PV_Leistung_ost;
-	long PV_Leistung_west;
-	long PV_Leistung_batt;
-	long PV_Leistung_grid;
-	long PV_Verbrauch;
-	long PV_Heizstab;
-	float PV_Batterie;
-	long PV_WallboxWatt;
-	float WT_Temperatur;
-	float WT_Feuchte;
-	float WT_Druck;
-	float PL_Gewicht;
-	float HZ_Lager;
-	String HZ_Fehler;
 	unsigned char *framebuffer;
 	Epd epd;
 	Paint *paint;

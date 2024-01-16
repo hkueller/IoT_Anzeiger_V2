@@ -4,8 +4,6 @@ network::network() {
 	void *ptr;
 	ptr=(WiFiServer *) malloc(sizeof(WiFiServer));
 	server = (WiFiServer *) new(ptr) WiFiServer(80);
-	ptr=(WiFiServer *) malloc(sizeof(WiFiServer));
-	netvalues = (WiFiServer *) new(ptr) WiFiServer(5023);
 }
 
 void network::begin() {
@@ -24,10 +22,15 @@ void network::begin() {
 	});
   	ArduinoOTA.begin();
 	configTime(MY_TZ, MY_NTP_SERVER);
+	while(!getLocalTime(&zeit)) {
+#ifdef DEBUG
+		Serial.println("Time still not available");
+		Serial.flush();
+#endif
+		delay(100);
+	}
 	server->begin();
-	netvalues->begin();
 	server->setNoDelay(true);
-	netvalues->setNoDelay(true);
 	network::FhemConnect();
 	yield();
 }
@@ -43,23 +46,16 @@ int network::testNet(display *disp) {
 	Serial.println("checking uptime");
 	Serial.flush();
 #endif
-	/*if ( millis() > 30 * 1000 * 60 ) {
-#ifdef DEBUG
-		Serial.println("time over, restarting");
-        	Serial.flush();
-#endif
-		ESP.restart();
-	}*/
 	while(WiFi.status() != WL_CONNECTED && wifi_retry < 5 ) {
 #ifdef DEBUG
 		Serial.println("Network Offline, Reconnect");
         	Serial.flush();
 #endif
-		disp->NetOffline();
+		disp->Message("Network Offline!");
 		WiFi.disconnect();
 		delay(100);
 		wifimanager.setConfigPortalTimeout(300);
-		wifimanager.autoConnect("AutoConnectAP");
+		wifimanager.autoConnect("IOTAnzeiger");
 		delay(100);
 		wifi_retry++;
 		rc=1;
@@ -87,17 +83,14 @@ int network::testNet(display *disp) {
         	Serial.flush();
 #endif
 		server->begin();
-		netvalues->begin();
 		server->setNoDelay(true);
-		netvalues->setNoDelay(true);
 		network::FhemConnect();
 		yield();
 	}
 	return(rc);
 }
 
-//the minimalistic webserver
-void network::handleWeb(display *disp) {
+void network::handleWeb(smarthome *data) {
 	//some variables
 	//here for the actual client connection
 	WiFiClient webclient;
@@ -155,51 +148,23 @@ void network::handleWeb(display *disp) {
 						temp+=twodigit(zeit.tm_min);
 						temp+=".";
 						temp+=twodigit(zeit.tm_sec);
-						temp+="</td></tr><tr><td>Haus Verbrauch:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVVerbrauch());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Wallbox Leistung:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVWallboxWatt());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Externer Versorger:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVLeistung_grid());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Batterie Strom:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVLeistung_batt());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Ertrag Gesammt:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVLeistung());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Ertrag Osten:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVLeistung_ost());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Ertrag Westen:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVLeistung_west());
-						temp+=" W";
-						temp+="</td></tr><tr><td>PV Batterie:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVBatterie());
-						temp+=" %";
-						temp+="</td></tr><tr><td>PV-Heizstab:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetPVHeizstab());
-						temp+=" W";
-						temp+="</td></tr><tr><td>Temperatur:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetWTTemperatur());
-						temp+=" C";
-						temp+="</td></tr><tr><td>Feuchte:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetWTFeuchte());
-						temp+=" %";
-						temp+="</td></tr><tr><td>Luftdruck:</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetWTDruck(),1);
-						temp+=" hP";
-						temp+="</td></tr><tr><td>Pellets im Lager:</td><td style=\"text-align:right\">\n";
-						//we want the pellts ammount in tonns with 3 values after .
-						temp+=String(disp->GetPLGewicht(),3);
-						temp+=" T";
-						temp+="</td></tr><tr><td>Pellets im Lager(Hzg):</td><td style=\"text-align:right\">\n";
-						temp+=String(disp->GetHzLager(),3);
-						temp+=" T";
-						temp+="</td></tr><tr><td>Heizung Status:</td><td style=\"text-align:right\">\n";
-						temp+=disp->GetHzFehler();
+						data->SetFirst();
+						if ( ! data->IsHeadline() ) {
+							temp+="</td></tr><tr><td>";
+							temp+=data->GetName();
+							temp+=":</td><td style=\"text-align:right\">\n";
+							temp+=data->GetData();
+						}
+						while(data->SetNext()) {
+							if ( ! data->IsHeadline() ) {
+								temp+="</td></tr><tr><td>";
+								temp+=data->GetName();
+								temp+=":</td><td style=\"text-align:right\">\n";
+								temp+=data->GetData();
+								temp+=" ";
+								temp+=data->GetEinheit();
+							}
+						}
 						temp+="</td></tr></tbody></table></center><br></body></html>\n\n";
 						//now send the string buffer
 						webclient.print(temp);
@@ -226,6 +191,7 @@ void network::handleWeb(display *disp) {
 	yield();
 }
 
+
 int network::FhemConnect() {
 	if ( fhemclient == 0 ) {
 		void *ptr;
@@ -247,7 +213,7 @@ void network::FhemDisconnect() {
 	fhemclient=0;
 }
 
-void network::UpdateData(display *disp) {
+void network::UpdateData(display *disp, smarthome *data) {
 	String Result;
 	unsigned long lasttime;
 
@@ -273,196 +239,35 @@ void network::UpdateData(display *disp) {
 	Serial.println("Start reading data");
         Serial.flush();
 #endif
-	/*for(int i=0;i<FHEM_RETRY;i++) {
+	data->SetFirst();
+	if ( ! data->IsHeadline() ) {
+		for ( int i=0; i<FHEM_RETRY; i++) {
 #ifdef DEBUG
-		Serial.println("global->altitude");
-        	Serial.flush();
+			Serial.println(data->GetDev() + "->" + data->GetReading() );
+			Serial.flush();
 #endif
-		if (FhemGetData(&Result, String("global"), String("altitude"), &lasttime) == 1) {
-			break;
-		}
-	}*/
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->pv_gesammt_leistung");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("pv_gesammt_leistung"), &lasttime) == 1) {
-			disp->UpdatePVLeistung((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVLeistung((long) Result.toDouble());
+			if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
+				data->SetData(Result);
+				break;
+			} else {
+				Result="-1";
+				data->SetData(Result);
+			}
 		}
 	}
-	for(int i=0;i<FHEM_RETRY;i++) {
+	while(data->SetNext()) {
+		for ( int i=0; i<FHEM_RETRY; i++) {
 #ifdef DEBUG
-		Serial.println("E3DC->pv_ost_leistung");
-        	Serial.flush();
+			Serial.println(data->GetDev() + "->" + data->GetReading() );
+			Serial.flush();
 #endif
-		if (FhemGetData(&Result, String("E3DC"), String("pv_ost_leistung"), &lasttime) == 1 ) {
-			disp->UpdatePVLeistung_ost((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVLeistung_ost((long) Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->pv_west_leistung");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("pv_west_leistung"), &lasttime) == 1 ) {
-			disp->UpdatePVLeistung_west((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVLeistung_west((long) Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->batterie_ladeleistung");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("batterie_ladeleistung"), &lasttime) == 1 ) {
-			disp->UpdatePVLeistung_batt((long) Result.toDouble());
-			break;
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->netzbezug");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("netzbezug"), &lasttime) == 1 ) {
-			disp->UpdatePVLeistung_grid((long) Result.toDouble());
-			break;
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->eigenverbrauch");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("eigenverbrauch"), &lasttime) == 1 ) {
-			disp->UpdatePVVerbrauch((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVVerbrauch((long) Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->batterie_fuellstand");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("batterie_fuellstand"), &lasttime) == 1 ) {
-			disp->UpdatePVBatterie(Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVBatterie(Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("E3DC->Wallboxwatt");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("E3DC"), String("Wallboxwatt"), &lasttime) == 1 ) {
-			disp->UpdatePVWallboxWatt((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVWallboxWatt((long) Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("kg_hzg_pvheat->Leistung");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("kg_hzg_pvheat"), String("Leistung"), &lasttime) == 1 ) {
-			disp->UpdatePVHeizstab((long) Result.toDouble());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePVHeizstab((long) Result.toDouble());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("gt_carport_wetter->av_temp");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("gt_carport_wetter"), String("av_temp"), &lasttime) == 1 ) {
-			disp->UpdateWTTemperatur(Result.toFloat());
-			break;
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("gt_carport_wetter->humidity");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("gt_carport_wetter"), String("humidity"), &lasttime) == 1 ) {
-			disp->UpdateWTFeuchte(Result.toFloat());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdateWTFeuchte(Result.toFloat());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("gt_carport_wetter->pressure");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("gt_carport_wetter"), String("pressure"), &lasttime) == 1 ) {
-			disp->UpdateWTDruck(Result.toFloat());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdateWTDruck(Result.toFloat());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("kg_heizung_pellets->pellets");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("kg_heizung_pellets"), String("pellets"), &lasttime) == 1 ) {
-			disp->UpdatePLGewicht(Result.toFloat());
-			break;
-		} else {
-			Result="-1";
-			disp->UpdatePLGewicht(Result.toFloat());
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("kg_hzg_brenner->lager_kg");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("kg_hzg_brenner"), String("lager_kg"), &lasttime) == 1 ) {
-			disp->UpdateHzLager(Result.toFloat()/1000);
-			break;
-		} else {
-			Result="-1";
-			disp->UpdateHzLager(Result.toFloat()/1000);
-		}
-	}
-	for(int i=0;i<FHEM_RETRY;i++) {
-#ifdef DEBUG
-		Serial.println("kg_hzg_brenner->Stoerungs_nummer");
-        	Serial.flush();
-#endif
-		if (FhemGetData(&Result, String("kg_hzg_brenner"), String("Stoerungs_nummer"), &lasttime) == 1 ) {
-			disp->UpdateHzFehler(Result);
-			break;
+			if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
+				data->SetData(Result);
+				break;
+			} else {
+				Result="-1";
+				data->SetData(Result);
+			}
 		}
 	}
 	StoreTimeLastRead();
@@ -474,15 +279,11 @@ void network::UpdateData(display *disp) {
 	Result+=":";
 	Result+=twodigit(zeit.tm_min);
 	disp->SetDate(Result);
-#ifdef DEBUG
-		Serial.println("Update Data done, Enable Display update");
-        	Serial.flush();
-#endif
 	disp->EnableUpdate();
 	while(!fhemclient->available()) {yield();}
 	fhemclient->print("quit\n");
 	//network::FhemDisconnect();
-}
+};
 
 int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
 	String buffer;
@@ -517,262 +318,6 @@ int network::FhemGetData(String *result, const String device, const String readi
        	Serial.flush();
 #endif
 	return(1);
-}
-
-void network::handleInc(display *disp) {
-	WiFiClient telnetclient;
-	String command = "";
-	String Argument = "";
-	String currentline = "";
-
-	telnetclient = netvalues->accept();
-	telnetclient.print(F("$ "));
-	while(telnetclient.connected()) {
-		if (telnetclient.available()) {
-			char c = telnetclient.read();
-			header +=c;
-			if ( c== ' ' ) {
-				if (currentline.length() > 0) {
-					command = currentline;
-					currentline="";
-				}
-			} else if( c == '\n' ) {
-				if (command.length() > 0 ) {
-					Argument = currentline;
-					if ( ! strcmp(command.c_str(),"SetLeistung" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Leistung to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVLeistung((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetLeistungOst" ) ){
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Verbrauch Ost to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVLeistung_ost((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetLeistungWest" ) ){
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Verbrauch West to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVLeistung_west((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetLeistungBatt" ) ){
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Verbrauch Batt to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVLeistung_batt((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetLeistungGrid" ) ){
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Verbrauch Grid to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVLeistung_grid((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetVerbrauch" ) ){
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Verbrauch to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVVerbrauch((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetBatterie" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Batterie to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVBatterie(Argument.toInt());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetPvWallboxWatt" )) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set WallboxWatt to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVWallboxWatt((long) Argument.toDouble());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-						
-					} else if ( ! strcmp(command.c_str(), "SetPVHeater" )) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set PVHeater to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePVHeizstab((long) Argument.toDouble());
-							disp->EnableUpdate();
-						}
-					} else if ( ! strcmp(command.c_str(), "SetTemperatur" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Temperatur to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdateWTTemperatur(Argument.toFloat());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetFeuchte" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Feuchte to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdateWTFeuchte(Argument.toFloat());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetDruck" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Druck to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdateWTDruck(Argument.toFloat());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetPellets" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Pellets to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdatePLGewicht(Argument.toFloat());
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetHzStatus" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Heater state to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->UpdateHzFehler(Argument);
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else if ( ! strcmp(command.c_str(), "SetDate" ) ) {
-						if ( Argument.length() > 0 ) {
-							telnetclient.print(F("I will set Date to: "));
-							telnetclient.print(Argument);
-							telnetclient.print("\n");
-							disp->SetDate(Argument);
-							disp->EnableUpdate();
-						} else {
-							telnetclient.print(F("Command "));
-							telnetclient.print(command.c_str());
-							telnetclient.print(" Need at least one Argument");
-						}
-					} else {
-						telnetclient.print(F("Command "));
-						telnetclient.print(command.c_str());
-						telnetclient.print("not known!\n");
-					} 
-				} else if (currentline.length() > 0 ) {
-					if ( ! strcmp(currentline.c_str(), "help" ) ) {
-						telnetclient.print(F("IOT Display command ref\n"));
-						telnetclient.print(F("SetLeistung Value\n"));
-						telnetclient.print(F("SetLeistungOst Value\n"));
-						telnetclient.print(F("SetLeistungWest Value\n"));
-						telnetclient.print(F("SetLeistungBatt Value\n"));
-					        telnetclient.print(F("SetPvWallboxWatt\n"));
-						telnetclient.print(F("SetLeistungGrid Value\n"));
-					        telnetclient.print(F("SetVerbrauch Value\n"));
-						telnetclient.print(F("SetBatterie Value\n"));
-						telnetclient.print(F("SetPVHeater Value\n"));
-						telnetclient.print(F("SetTemperatur Value\n"));
-						telnetclient.print(F("SetFeuchte Value\n"));
-						telnetclient.print(F("SetDruck Value\n"));
-						telnetclient.print(F("SetPellets Value\n"));
-					        telnetclient.print(F("SetHzStatus\n"));
-						telnetclient.print(F("SetDate Value\n"));
-						telnetclient.print(F("exit\n"));
-					} else if ( ! strcmp(currentline.c_str(), "exit" ) ) {
-						telnetclient.print("\r\n");
-						break;
-					} else if ( ! strcmp(currentline.c_str(), "bye" ) ) {
-						telnetclient.print("\r\n");
-						break;
-					} else {
-						telnetclient.print(F("Command "));
-						telnetclient.print(currentline.c_str());
-						telnetclient.print(" not known!\n");
-					}
-				}
-				//client.flush();
-				currentline="";
-				command="";
-				Argument="";
-				telnetclient.print(F("$ "));
-				yield();
-			} else if ( c != '\r' ) {
-				//collect the line send by client char for char.
-				currentline += c;
-				yield();
-			} else if ( c == EOF ) {
-				telnetclient.print(EOF);
-				telnetclient.print("\r\n");
-				break;
-			}
-		}
-	}
-	//reset our header variable
-	header = "";
-	// and stop the client connection
-	telnetclient.stop();
 }
 
 void network::handleOTA() {
