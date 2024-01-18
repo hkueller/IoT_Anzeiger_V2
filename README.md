@@ -7,32 +7,32 @@ https://www.amazon.de/AZDelivery-D1-Mini-NodeMcu-Parent/dp/B07ZQP9FSX
 Als Display kommt ein Waveshare 4.2 E-Ink display zum Einsatz. z.B.:<br>
 https://www.amazon.de/Waveshare-Kommunikation-Schnittstelle-Aufl%C3%B6sung-Embedded-Controller/dp/B074NR1SW2/ref=sr_1_1?keywords=waveshare+e-inc+4.2&qid=1705571386&sr=8-1
 
-Obiges Display wird mit einem Adapterkabel geliefert, das sich direkt mit dem D1 Board verbinden lässt.
+Obiges Display wird mit einem Adapterkabel geliefert, das sich direkt mit dem D1 Board verbinden lässt.<br><br>
 
-Busy -> D2 (GPIO4)
-RST  -> D1 (GPIO5)
-DC   -> D3 (GPIO0)
-CS   -> D8 (GPIO15, SS)
-CLK  -> D5 (SCK)
-DIN  -> D7 (MOSI)
-GND  -> GND
-3.3V -> 3.3V
+Busy -> D2 (GPIO4)<br>
+RST  -> D1 (GPIO5)<br>
+DC   -> D3 (GPIO0)<br>
+CS   -> D8 (GPIO15, SS)<br>
+CLK  -> D5 (SCK)<br>
+DIN  -> D7 (MOSI)<br>
+GND  -> GND<br>
+3.3V -> 3.3V<br><br>
 
-Und damit ist die Schaltung auch schon Fertig.
+Und damit ist die Schaltung auch schon Fertig.<br>
 
 IOT_Anzeiger_V2 Verwendet ein MQTT2 Device in FHEM, sowie die Telnet Schnittstelle von FHEM.
 MQTT1 wird verwendet um die Initiale Konfiguration zu laden, Telnet um Readings von Geräten abzufragen.
-Aktuell wird nur eine Textausgabe auf dem Display unterstützt.
+Aktuell wird nur eine Textausgabe ohne Grafiken unterstützt.<br>
 
-Das Fhem Gerät lässt ich folgendermassen erstellen:
+Das Fhem Gerät lässt ich folgendermassen erstellen:<br><br>
 
-define \<displaname\> MQTT2_DEVICE <your mqtt server>
-attr \<displayname\> readingList display/get_config:* RequestConfig
-attr \<displayname\> userReadings SetConfig:RequestConfig.* {
-    if ( ReadingsVal($name,RequestConfig",0) eq "true") {
-        fhem("set <mqtt2server> publish display/line_0 \"Name, <fhem_device>, <reading>, <Einheit>, <position>\"");
-    }
-}
+define \<displaname\> MQTT2_DEVICE <your mqtt server><br>
+attr \<displayname\> readingList display/get_config:* RequestConfig<br>
+attr \<displayname\> userReadings SetConfig:RequestConfig.* \{<br>
+    if ( ReadingsVal($name,RequestConfig",0) eq "true") \{<br>
+        fhem("set \<mqtt2server\> publish display/line_0 "\\"Name, \<fhem_device\>, \<reading\>, \<Einheit\>, \<position\>\\"");<br>
+    \}<br>
+\}<br><br>
 
 Natürlich kann hier jedes Kommando (achtung: Perl Syntax) eingesetzt werden, das einem mqtt server Daten schickt.<br>
 Ich verwende in meinem Setup fhem als mqtt server. Dieser wird in fhem z.B. mit:<br>
