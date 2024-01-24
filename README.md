@@ -61,6 +61,15 @@ Nach dem anpassen, kann die Software unter Linux mit code/platformio übersetzt 
 # pio run -t upload
 ```
 
+## Netwerk Setup
+In dem Projekt wird der WifiManager für das Netzwerk Setup verwendet.<br>
+Eine Dokumentation hierzu gibt es im Internet:<br>
+
+https://github.com/tzapu/WiFiManager.git
+
+ist dem ESP keine Netzwerkkonfig bekannt, meldet dieser sich als AccessPoint mit der SSID "IOTAnzeiger".<br>
+Mit diesem muss man sich Verbinden, und dann der Dokumentation des WiFiManager Projektes folgen.<br>
+
 ## configuration in FHEM
 IOT_Anzeiger_V2 Verwendet ein MQTT2 Device in FHEM, sowie die Telnet Schnittstelle von FHEM.
 MQTT1 wird verwendet um die Initiale Konfiguration zu laden, Telnet um Readings von Geräten abzufragen.
