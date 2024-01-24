@@ -2,6 +2,7 @@
 
 Firmware des IOT_Anzeiger devices, zur Anzeige einiger Daten aus FHEM per esp8266 und einem 4.2 Zoll E-Paper displays.<br>
 ## Hardware
+### ESP8266 mit 4.2 Waveshare Display
 Ich verwende für den Aufbau die D1 Boardvariante:<br>
 https://www.amazon.de/AZDelivery-D1-Mini-NodeMcu-Parent/dp/B07ZQP9FSX
 
@@ -23,6 +24,15 @@ GND  -> GND
 
 Und damit ist die Schaltung auch schon Fertig.<br>
 
+### ESP32
+Die Software sollte grundsätzlich auch mit einem ESP32 Funktionieren. Hier werden allerdings noch einige Anpassungen bei den Defines und includes notwendig sein!<br>
+### Andere Displays
+Sofern diese mit den Waveshare Displays kompatibel sind, sollten diese Funktionieren.
+wenn in `config.h` die korrekten Werte eingetragen werden.<br>
+### Gehäuse
+Im Verzeichniss `Case_3DDruck` befinden sich Freecad Daten für ein Gehäuse sammt Deckel und Ständer.
+Der Ständer wird dabei am Geäuseboden angeschraubt - dazu sind kleine Selbstschneidende Schrauben Notwendig,
+die auch für den Deckel verwendet werden sollten.
 ## konfiguration der Software
 Vor dem Kompilieren der Firmware bitte einen Blick in `config.h` werfen.<br>
 Hier sind einige Konfigurierbare Optionen.<br>
