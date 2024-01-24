@@ -10,8 +10,11 @@
 #define UNCOLORED   1
 
 #define FIRSTLINE   5
+//font height in pixel
 #define INITLINESPACE 24
+//fondwith in pixel
 #define INITCHARSIZE 17
+//number of chars per line
 #ifdef LANDSCAPE
 #define INITTYPEPOS 17
 #else
@@ -74,10 +77,15 @@ public:
 	display();
 	display(long leistung, long leistung_ost, long leistung_west, long leistung_batt, long leistung_grid, long verbrauch, long leistung_heizstab, float batterie, long leistung_wallbox, float temp, float feuchte, float druck, float gewicht, float hz_gewicht, String hz_fehler);
 	void begin();
+	void begin(smarthome *config);
 	void Message(String message);
+	void Message(String message, smarthome *config);
 	void LoadFrame(smarthome *data);
+	void PrintHeadLine(String head, String data, smarthome *config);
 	void PrintHeadLine(int linenum, String head);
+	void PrintHeadLine(int linenum, String head, smarthome *config);
 	void PrintValueLine(int x, int linenum, int left, String name, String type, String value);
+	void PrintValueLine(int x, int linenum, int left, String name, String type, String value, smarthome *config);
 	void EnableUpdate();
 	bool GetUpdate();
 	unsigned int getLastTime();

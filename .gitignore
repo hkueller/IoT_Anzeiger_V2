@@ -1,3 +1,4 @@
 .pio/build
 .pio/libdeps/nodemcu/integrity.dat
 .pio/libdeps/nodemcu/WiFiManager/
+.pio/libdeps/nodemcu/PubSubClient/

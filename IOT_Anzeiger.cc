@@ -32,50 +32,8 @@
 display disp;
 network net;
 smarthome sm;
-
-
-void DataSetup() {
-	//Add a head line ("Solarinfo" on line 0 (only on line 0 Date and time of last dataload will be added)
-	sm.add("Solarinfo   ",0);
-	//Add Entry for Line 1 (row 3) to Display, which will be labeld "PV Ertrag", and
-	//taken from fhem device "E3DC" and Reading "pv_gesammt_leistung".
-	//the value will be displayed as "W" (Watts)
-	sm.add("PV Ertrag","E3DC","pv_gesammt_leistung","W",1,3);
-	yield();
-	//Add Entry, which will only be Displayed on Web site. Labeled "Ertrag Osten", data
-	//from fhem Device "E3DC" and reading "pv_ost_leistung"
-	sm.add("Ertrag Osten","E3DC","pv_ost_leistung","W");
-	yield();
-	sm.add("Ertrag Westen","E3DC","pv_west_leistung","W");
-	yield();
-	sm.add("Verbrauch","E3DC","eigenverbrauch","W",2,3);
-	yield();
-	sm.add("Wallbox","E3DC","Wallboxwatt","W",4,3);
-	yield();
-	//Add a headline on line 5
-	sm.add(" Wetter Informationen",5);
-	yield();
-	sm.add("Externer Versorger","E3DC","netzbezug","W");
-	yield();
-	sm.add("Batterie Strom","E3DC","batterie_ladeleistung","W");
-	yield();
-	sm.add("Batterie","E3DC","batterie_fuellstand","%",3,3);
-	yield();
-	sm.add("PV Heizstab","kg_hzg_pvheat","Leistung","W");
-	yield();
-	sm.add("Temperatur","gt_carport_wetter","av_temp","C",6,3);
-	yield();
-	sm.add("Feuchte","gt_carport_wetter","humidity","%",7,3);
-	yield();
-	sm.add("Luftdruck","gt_carport_wetter","pressure","hp",8,3);
-	yield();
-	sm.add("Pellets Heizung",9);
-	yield();
-	sm.add("Gew. Bestand","kg_hzg_brenner","lager_kg","kg",10,3);
-	yield();
-	sm.add("Hzg Status","kg_hzg_brenner","Stoerungs_nummer","",11,3);
-	yield();
-}
+bool mutex=false;
+bool firstrun=true;
 
 void setup() {
 	// put your setup code here, to run once:
@@ -91,33 +49,22 @@ void setup() {
 	Serial.begin(115200);
 #endif
 #ifdef DEBUG
-	Serial.println("Setting up smarthome class");
-	Serial.flush();
-	delay(1000);
-#endif
-	disp.Message("Display Data Setup");
-	DataSetup();
-#ifdef DEBUG
-	Serial.println("smarthome class setup done");
-	Serial.flush();
-#endif
-#ifdef DEBUG
 	Serial.println("Starting Network");
 	Serial.flush();
 #endif
 	disp.Message("Starting up Network");
 	net.begin();
 	disp.Message("Network Up");
-	yield();
-	delay(1000);
-	yield();
-#ifdef DEBUG
+/*#ifdef DEBUG
 	Serial.println("Starting Data Reading");
 	Serial.flush();
 #endif
 	disp.Message("Reading Home Data");
 	net.UpdateData(&disp,&sm);
-	disp.updatelast();
+	disp.updatelast();*/
+	if(! sm.SetFirst()) {
+		disp.Message("Waiting for config data");
+	}
 #ifdef DEBUG
 	Serial.println("Setup completed");
 	Serial.flush();
@@ -125,6 +72,10 @@ void setup() {
 }
 
 void loop() {
+	if ( mutex ) {
+		yield();
+		return;
+	}
 	// put your main code here, to run repeatedly:
 	if ( net.testNet(&disp) == 1 ) {
 #ifdef DEBUG
@@ -144,36 +95,31 @@ void loop() {
 		disp.updatelast();
 	}
 #ifdef DEBUG
-	Serial.println("Running OTA");
+	Serial.println("Handle Net");
 	Serial.flush();
 #endif
-	net.handleOTA();
-	yield();
+	net.handleNet(&sm, &disp);
+	if(sm.SetFirst() == true) {
+		if ( disp.GetUpdate() == true) {
 #ifdef DEBUG
-	Serial.println("Running WEB");
-	Serial.flush();
+			Serial.println("Update Display");
+			Serial.flush();
 #endif
-	net.handleWeb(&sm);
-	yield();
-	if ( millis() - disp.getLastTime() > UPDATE_MINUTE * 1000 * 60) {
+			disp.LoadFrame(&sm);
 #ifdef DEBUG
-		Serial.println("Updating Data");
-		Serial.flush();
+			Serial.println("Update Updatetime");
+			Serial.flush();
 #endif
-		net.UpdateData(&disp,&sm);
-		yield();
+			disp.updatelast();
+			yield();
+		}
 	}
-	if ( disp.GetUpdate() == true) {
+	if(firstrun) {
 #ifdef DEBUG
-		Serial.println("Update Display");
+		Serial.println("Requesting transfer of config data");
 		Serial.flush();
 #endif
-		disp.LoadFrame(&sm);
-#ifdef DEBUG
-		Serial.println("Update Updatetime");
-		Serial.flush();
-#endif
-		disp.updatelast();
-		yield();
+		net.RequestConfig();
+		firstrun=false;
 	}
 }

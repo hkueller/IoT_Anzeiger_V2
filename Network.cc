@@ -4,12 +4,27 @@ network::network() {
 	void *ptr;
 	ptr=(WiFiServer *) malloc(sizeof(WiFiServer));
 	server = (WiFiServer *) new(ptr) WiFiServer(80);
+	ptr=(PubSubClient *) malloc(sizeof(PubSubClient));
+	mqtt = (PubSubClient *) new(ptr) PubSubClient(mqtt_client);
 }
 
 void network::begin() {
+	int retry=200;
+	int zahl=0;
+	clientId = "display_";
+
 	//wifimanager.resetSettings();
 	wifimanager.setConfigPortalTimeout(300);
+#ifdef DEBUG
+	Serial.println("Connecting WLAN");
+	Serial.flush();
+#endif
 	if( ! wifimanager.autoConnect("IOTAnzeiger") ) {
+#ifdef DEBUG
+		Serial.println("Connecting to WLAN failed");
+		Serial.println("Resetting the device");
+		Serial.flush();
+#endif
 		ESP.restart();
 	}
 	ArduinoOTA.onStart([]() {
@@ -20,19 +35,81 @@ void network::begin() {
 			type = "filesystem";
 		}
 	});
-  	ArduinoOTA.begin();
+#ifdef DEBUG
+	Serial.println("Trying to get time from network");
+	Serial.flush();
+#endif
 	configTime(MY_TZ, MY_NTP_SERVER);
 	while(!getLocalTime(&zeit)) {
+		if ( zahl < retry ) {
 #ifdef DEBUG
-		Serial.println("Time still not available");
-		Serial.flush();
+			Serial.println("Time still not available. retry: " + String(zahl));
+			Serial.flush();
 #endif
-		delay(100);
+			delay(100);
+			zahl++;
+		} else {
+#ifdef DEBUG
+			Serial.println("Timesetup failed");
+			Serial.flush();
+#endif
+			break;
+		}
+
 	}
+#ifdef DEBUG
+	Serial.println("Initializing OTA");
+	Serial.flush();
+#endif
+  	ArduinoOTA.begin();
+#ifdef DEBUG
+	Serial.println("Initializing WEB Server");
+	Serial.flush();
+#endif
 	server->begin();
 	server->setNoDelay(true);
+#ifdef DEBUG
+	Serial.println("Initializing MQTT Service");
+	Serial.flush();
+#endif
+	mqtt->setServer(MQTT_SERVER,MQTT_PORT);
+	mqtt->setCallback(callback);
+	clientId += String(random(0xffff), HEX);
+#ifdef DEBUG
+	Serial.print("Attempting MQTT connection...");
+	Serial.flush();
+#endif
+	if (mqtt->connect(clientId.c_str())) {
+#ifdef DEBUG
+		Serial.print("connected, sending false to ");
+		Serial.println(MQTT_REQUEST_TOPIC);
+		Serial.flush();
+#endif
+		// Once connected, publish an announcement...
+		mqtt->publish(MQTT_REQUEST_TOPIC, "false");
+		// ... and resubscribe
+#ifdef DEBUG
+		Serial.print("subscribe ");
+		Serial.println(MQTT_SUBSCRIBE_TOPIC);
+		Serial.flush();
+#endif
+		mqtt->subscribe(MQTT_SUBSCRIBE_TOPIC);
+#ifdef DEBUG
+		Serial.println("mqtt setup ready");
+		Serial.flush();
+#endif
+	}
+#ifdef DEBUG
+	Serial.println("Connecting to FHEM Instance");
+	Serial.flush();
+#endif
 	network::FhemConnect();
 	yield();
+#ifdef DEBUG
+	Serial.println("NETWORK SETUP FINISHED");
+	Serial.flush();
+#endif
+	lasttime=millis() - 60000*60 + 20;
 }
 
 int network::testNet(display *disp) {
@@ -84,6 +161,26 @@ int network::testNet(display *disp) {
 #endif
 		server->begin();
 		server->setNoDelay(true);
+		if (mqtt->connect(clientId.c_str())) {
+#ifdef DEBUG
+			Serial.print("connected, sending false to ");
+			Serial.println(MQTT_REQUEST_TOPIC);
+			Serial.flush();
+#endif
+			// Once connected, publish an announcement...
+			mqtt->publish(MQTT_REQUEST_TOPIC, "false");
+			// ... and resubscribe
+#ifdef DEBUG
+			Serial.print("subscribe ");
+			Serial.println(MQTT_SUBSCRIBE_TOPIC);
+			Serial.flush();
+#endif
+			mqtt->subscribe(MQTT_SUBSCRIBE_TOPIC);
+#ifdef DEBUG
+			Serial.println("mqtt setup ready");
+			Serial.flush();
+#endif
+		}
 		network::FhemConnect();
 		yield();
 	}
@@ -148,21 +245,22 @@ void network::handleWeb(smarthome *data) {
 						temp+=twodigit(zeit.tm_min);
 						temp+=".";
 						temp+=twodigit(zeit.tm_sec);
-						data->SetFirst();
-						if ( ! data->IsHeadline() ) {
-							temp+="</td></tr><tr><td>";
-							temp+=data->GetName();
-							temp+=":</td><td style=\"text-align:right\">\n";
-							temp+=data->GetData();
-						}
-						while(data->SetNext()) {
+						if(data->SetFirst()) {
 							if ( ! data->IsHeadline() ) {
 								temp+="</td></tr><tr><td>";
 								temp+=data->GetName();
 								temp+=":</td><td style=\"text-align:right\">\n";
 								temp+=data->GetData();
-								temp+=" ";
-								temp+=data->GetEinheit();
+							}
+							while(data->SetNext()) {
+								if ( ! data->IsHeadline() ) {
+									temp+="</td></tr><tr><td>";
+									temp+=data->GetName();
+									temp+=":</td><td style=\"text-align:right\">\n";
+									temp+=data->GetData();
+									temp+=" ";
+									temp+=data->GetEinheit();
+								}
 							}
 						}
 						temp+="</td></tr></tbody></table></center><br></body></html>\n\n";
@@ -215,7 +313,7 @@ void network::FhemDisconnect() {
 
 void network::UpdateData(display *disp, smarthome *data) {
 	String Result;
-	unsigned long lasttime;
+	//unsigned long lasttime;
 
 	if ( ! fhemclient->connected()) {
 		network::FhemDisconnect();
@@ -239,53 +337,79 @@ void network::UpdateData(display *disp, smarthome *data) {
 	Serial.println("Start reading data");
         Serial.flush();
 #endif
-	data->SetFirst();
-	if ( ! data->IsHeadline() ) {
-		for ( int i=0; i<FHEM_RETRY; i++) {
+	if(data->SetFirst()) {
+		if ( ! data->IsHeadline() ) {
+			for ( int i=0; i<FHEM_RETRY; i++) {
 #ifdef DEBUG
-			Serial.println(data->GetDev() + "->" + data->GetReading() );
-			Serial.flush();
+				Serial.println(data->GetDev() + "->" + data->GetReading() );
+				Serial.flush();
 #endif
-			if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
-				data->SetData(Result);
-				break;
-			} else {
-				Result="-1";
-				data->SetData(Result);
+				//if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
+				if (FhemGetData(&Result, data->GetDev(), data->GetReading()) == 1 ) {
+					data->SetData(Result);
+					break;
+				} else {
+					Result="-1";
+					data->SetData(Result);
+				}
 			}
 		}
-	}
-	while(data->SetNext()) {
-		for ( int i=0; i<FHEM_RETRY; i++) {
+		while(data->SetNext()) {
+			for ( int i=0; i<FHEM_RETRY; i++) {
 #ifdef DEBUG
-			Serial.println(data->GetDev() + "->" + data->GetReading() );
-			Serial.flush();
+				Serial.println(data->GetDev() + "->" + data->GetReading() );
+				Serial.flush();
 #endif
-			if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
-				data->SetData(Result);
-				break;
-			} else {
-				Result="-1";
-				data->SetData(Result);
+				//if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
+				if (FhemGetData(&Result, data->GetDev(), data->GetReading()) == 1 ) {
+					data->SetData(Result);
+					break;
+				} else {
+					Result="-1";
+					data->SetData(Result);
+				}
 			}
 		}
+#ifdef DEBUG
+		Serial.println("Updateing Timer");
+        	Serial.flush();
+#endif
+		StoreTimeLastRead();
+		Result=twodigit(zeit.tm_mday);
+		Result+=".";
+		Result+=twodigit(zeit.tm_mon+1);
+		Result+=" ";
+		Result+=twodigit(zeit.tm_hour);
+		Result+=":";
+		Result+=twodigit(zeit.tm_min);
+		disp->SetDate(Result);
+		disp->EnableUpdate();
+		/*
+#ifdef DEBUG
+		Serial.println("Clearing fhem read buffer");
+        	Serial.flush();
+#endif
+		while(fhemclient->available()) {
+			fhemclient->flush();
+			yield();
+		}*/
+#ifdef DEBUG
+		Serial.println("quitting fhem");
+        	Serial.flush();
+#endif
+		fhemclient->print("quit\n");
+		//network::FhemDisconnect();
+	} else {
+		fhemclient->print("quit\n");
 	}
-	StoreTimeLastRead();
-	Result=twodigit(zeit.tm_mday);
-	Result+=".";
-	Result+=twodigit(zeit.tm_mon+1);
-	Result+=" ";
-	Result+=twodigit(zeit.tm_hour);
-	Result+=":";
-	Result+=twodigit(zeit.tm_min);
-	disp->SetDate(Result);
-	disp->EnableUpdate();
-	while(!fhemclient->available()) {yield();}
-	fhemclient->print("quit\n");
-	//network::FhemDisconnect();
+#ifdef DEBUG
+	Serial.println("Reading data completed");
+	Serial.flush();
+#endif
 };
 
-int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
+//int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
+int network::FhemGetData(String *result, const String device, const String reading) {
 	String buffer;
 	*result="";
 #ifdef DEBUG
@@ -305,7 +429,7 @@ int network::FhemGetData(String *result, const String device, const String readi
 	Serial.println("Waiting for answer");
        	Serial.flush();
 #endif
-	*lasttime=millis();
+	//*lasttime=millis();
 	while(fhemclient->available() < 1 ) {yield();}
 #ifdef DEBUG
 	Serial.println("Reading answer");
@@ -322,6 +446,38 @@ int network::FhemGetData(String *result, const String device, const String readi
 
 void network::handleOTA() {
 	ArduinoOTA.handle();
+}
+
+void network::handleNet(smarthome *sm, display *disp) {
+#ifdef DEBUG
+	Serial.println("Running mqtt loop");
+	Serial.flush();
+#endif
+	mqtt->loop();
+	yield();
+#ifdef DEBUG
+	Serial.println("Running OTA");
+	Serial.flush();
+#endif
+	ArduinoOTA.handle();
+	yield();
+	if ( millis() - disp->getLastTime() > UPDATE_MINUTE * 1000 * 60) {
+#ifdef DEBUG
+		Serial.println("Updating smarthome Data");
+		Serial.flush();
+#endif
+		UpdateData(disp,sm);
+		yield();
+	}
+#ifdef DEBUG
+	Serial.println("Running WEB");
+#endif
+	handleWeb(sm);
+	yield();
+	if ( millis() > lasttime + (1000*300) ) {
+		RequestConfig();
+		lasttime=millis();
+	}
 }
 
 void network::StoreTimeLastRead() {
@@ -373,3 +529,33 @@ String network::twodigit(int number) {
 	buffer+=number;
 	return(buffer);
 }
+
+void network::RequestConfig() {
+	mqtt->publish(MQTT_REQUEST_TOPIC,"true");
+}
+
+void network::ConfigDone() {
+	mqtt->publish(MQTT_REQUEST_TOPIC,"false");
+}
+
+void network::reconnect() {
+	while (!mqtt->connected()) {
+		Serial.print("Attempting MQTT connection...");
+		// Create a random client ID
+		// Attempt to connect
+		if (mqtt->connect(clientId.c_str())) {
+			Serial.println("connected");
+			// Once connected, publish an announcement...
+			mqtt->publish(MQTT_REQUEST_TOPIC, "false");
+			// ... and resubscribe
+			mqtt->subscribe(MQTT_SUBSCRIBE_TOPIC);
+		} else {
+			Serial.print("failed, rc=");
+			Serial.print(mqtt->state());
+			Serial.println(" try again in 5 seconds");
+			// Wait 5 seconds before retrying
+			delay(5000);
+		}
+  	}
+}
+

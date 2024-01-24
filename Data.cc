@@ -1,25 +1,46 @@
 #include "Data.h"
-#include <config.h>
 
 smarthome::smarthome() {
 	sh_data=NULL;
+	SetFont(24);
+	SetOrientation(0);
+#ifdef DEBUG
+	Serial.println("smarthome: unblock data");
+	Serial.flush();
+#endif
+	block=false;
 };
 
-smarthome::smarthome(String show_name, String fhem_dev, String fhem_reading, String fhem_data, String einheit){
-	add(show_name, fhem_dev, fhem_reading, String(""), einheit, 0, 0);
+smarthome::smarthome(String *show_name, int line) {
+	add(show_name,line);
+	SetFont(24);
+	SetOrientation(0);
 };
 
-smarthome::smarthome(String show_name, String fhem_dev, String fhem_reading, String einheit, int disp_line, int disp_pos) {
-	add(show_name, fhem_dev, fhem_reading, String(""), disp_line, disp_pos);
+smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, String *fhem_data, String *einheit){
+	String buffer = "";
+	add(show_name, fhem_dev, fhem_reading, &buffer, einheit, 0, 0);
+	SetFont(24);
+	SetOrientation(0);
 };
 
-smarthome::smarthome(String show_name, String fhem_dev, String fhem_reading, String fhem_data, String einheit, int disp_line, int disp_pos) {
+smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, String *einheit, int disp_line, int disp_pos) {
+	String buffer = "";
+	add(show_name, fhem_dev, fhem_reading, &buffer, disp_line, disp_pos);
+	SetFont(24);
+	SetOrientation(0);
+};
+
+smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, String *fhem_data, String *einheit, int disp_line, int disp_pos) {
 	add(show_name, fhem_dev, fhem_reading, fhem_data, disp_line, disp_pos);
+	SetFont(24);
+	SetOrientation(0);
 };
 	
-bool smarthome::add(String show_name, int line) {
+bool smarthome::add(String *show_name, int line) {
 	bool state=false;
-	state=add(show_name,String(""),String(""),String(""),line,0);
+	String buffer = "";
+	state=add(show_name,&buffer,&buffer,&buffer,line,0);
 	if ( state ) {
 #ifdef DEBUG
 	Serial.println("Setting headline to true");
@@ -31,16 +52,27 @@ bool smarthome::add(String show_name, int line) {
 	return state;
 }
 
-bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, String einheit){
-	return(add(show_name, fhem_dev, fhem_reading, String(""), einheit, 0, 0));
+bool smarthome::add(String *show_name, String *fhem_dev, String *fhem_reading, String *einheit){
+	String buffer = "";
+	return(add(show_name, fhem_dev, fhem_reading, &buffer, einheit, 0, 0));
 };
 
-bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, String einheit, int disp_line, int disp_pos){
-	return(add(show_name, fhem_dev, fhem_reading, String(""), einheit, disp_line, disp_pos));
+bool smarthome::add(String *show_name, String *fhem_dev, String *fhem_reading, String *einheit, int disp_line, int disp_pos){
+	String buffer = "";
+	return(add(show_name, fhem_dev, fhem_reading, &buffer, einheit, disp_line, disp_pos));
 };
-bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, String fhem_data, String einheit, int disp_line, int disp_pos) {
+bool smarthome::add(String *show_name, String *fhem_dev, String *fhem_reading, String *fhem_data, String *einheit, int disp_line, int disp_pos) {
+	while ( block ) {
+		yield();
+		delay(100);
+	}
 #ifdef DEBUG
-	Serial.println("Adding Entry for" + show_name);
+        Serial.println("add: blocking data");
+	Serial.flush();
+#endif
+	block=true;
+#ifdef DEBUG
+	Serial.println("Adding Entry for " + *show_name);
 	Serial.flush();
 #endif
 	SH_DATA *temp;
@@ -59,9 +91,14 @@ bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, Stri
 			sh_data->next = NULL;
 			sh_data->prev = NULL;
 		} else {
+#ifdef DEBUG
+			Serial.println("Did not get mem!");
+			Serial.println("add: unblock data");
+			Serial.flush();
+#endif
+			block=false;
 			return(false);
 		}
-		yield();
 	} else {
 		sh_data = (SH_DATA *) sh_data->first;
 #ifdef DEBUG
@@ -71,7 +108,6 @@ bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, Stri
 		while ( sh_data->next ) {
 			sh_data = (SH_DATA *) sh_data->next;
 		}
-		yield();
 #ifdef DEBUG
 		Serial.println("Requesting MEM");
 		Serial.flush();
@@ -90,77 +126,107 @@ bool smarthome::add(String show_name, String fhem_dev, String fhem_reading, Stri
 		} else {
 #ifdef DEBUG
 			Serial.println("Did not get mem!");
+			Serial.println("add: unblock data");
 			Serial.flush();
 #endif
+			block=false;
 			return(false);
 		}
-		yield();
 	}
 #ifdef DEBUG
-	Serial.println("Adding " + show_name + "  to entrie");
+	Serial.println("Adding >" + *show_name + "< to entry name");
 	Serial.flush();
 #endif
-	sh_data->name = show_name;
-	yield();
+	sh_data->name = (char *) malloc(sizeof(char)*(show_name->length()+1));
+	strcpy(sh_data->name,show_name->c_str());
 #ifdef DEBUG
-	Serial.println("Adding " + fhem_dev + "  to entrie");
+	Serial.println("Adding >" + *fhem_dev + "< to entry device");
 	Serial.flush();
 #endif
-	sh_data->device = fhem_dev;
-	yield();
+	sh_data->device = (char *) malloc(sizeof(char)*(fhem_dev->length()+1));
+	strcpy(sh_data->device,fhem_dev->c_str());
 #ifdef DEBUG
-	Serial.println("Adding " + fhem_reading + "  to entrie");
+	Serial.println("Adding >" + *fhem_reading + "< to entry reading");
 	Serial.flush();
 #endif
-	sh_data->reading = fhem_reading;
-	yield();
+	sh_data->reading = (char *) malloc(sizeof(char)*(fhem_reading->length()+1));
+	strcpy(sh_data->reading,fhem_reading->c_str());
 #ifdef DEBUG
-	Serial.println("Adding " + fhem_data + "  to entrie");
+	Serial.println("Adding >" + *fhem_data + "< to entry data");
 	Serial.flush();
 #endif
-	sh_data->data = fhem_data;
-	yield();
+	strcpy(sh_data->data,fhem_data->c_str());
 #ifdef DEBUG
-	Serial.println("Adding " + einheit + "  to entrie");
+	Serial.println("Adding <" + *einheit + "> to entry einheit");
 	Serial.flush();
 #endif
-	sh_data->einheit = einheit;
-	yield();
+	sh_data->einheit = (char *) malloc(sizeof(char)*(einheit->length()+1));
+	strcpy(sh_data->einheit,einheit->c_str());
 #ifdef DEBUG
-	Serial.println("Adding " + String(disp_line) + "  to entrie");
+	Serial.println("Adding >" + String(disp_line) + "< to entry line number");
 	Serial.flush();
 #endif
 	sh_data->line = disp_line;
-	yield();
 #ifdef DEBUG
-	Serial.println("Adding " + String(disp_pos) + "  to entrie");
+	Serial.println("Adding >" + String(disp_pos) + "< to entry position");
 	Serial.flush();
 #endif
 	sh_data->pos = disp_pos;
-	yield();
 #ifdef DEBUG
 	Serial.println("Setting headline to false");
 	Serial.flush();
-	yield();
 #endif
 	//delay(1000);
-	yield();
 	//delay(500);
 	sh_data->headline=false;
+#ifdef DEBUG
+	Serial.println("add: unblock data");
+	Serial.flush();
+#endif
+	block=false;
 	return(true);
 };
 
-void smarthome::SetFirst() {
+bool smarthome::SetFirst() {
+	while ( block ) {
+		yield();
+		delay(100);
+	}
+#ifdef DEBUG
+        Serial.println("SetFirst: blocking data");
+	Serial.flush();
+#endif
+	block=true;
+	if ( ! sh_data ) {
+#ifdef DEBUG
+		Serial.println("SetFirst: unblock data");
+		Serial.flush();
+#endif
+		block=false;
+		return false;
+	}
 	sh_data = (SH_DATA *) sh_data->first;
+#ifdef DEBUG
+	Serial.println("SetFirst: unblock data");
+	Serial.flush();
+#endif
+	block=false;
+	return true;
 };
 
 void smarthome::SetLast() {
+	if ( ! sh_data )  {
+		return;
+	}
 	while(sh_data->next) {
 		sh_data = (SH_DATA * ) sh_data->next;
 	}
 };
 
 bool smarthome::SetNext() {
+	if ( ! sh_data ) {
+		return(false);
+	}
 	if(sh_data->next) {
 		sh_data = (SH_DATA *) sh_data->next;
 		return(true);
@@ -170,44 +236,349 @@ bool smarthome::SetNext() {
 };
 
 String smarthome::GetName() {
-	return sh_data->name;
+	if ( ! sh_data ) {
+		return(String("FAIL"));
+	}
+	return String(sh_data->name);
 };
 
 String smarthome::GetDev() {
-	return sh_data->device;
+	if ( ! sh_data ) {
+		return(String("FAIL"));
+	}
+	return String(sh_data->device);
 };
 
 String smarthome::GetReading() {
-	return sh_data->reading;
+	if ( ! sh_data ) {
+		return(String("FAIL"));
+	}
+	return String(sh_data->reading);
 };
 
 String smarthome::GetData() {
-	return sh_data->data;
+	if ( ! sh_data ) {
+		return(String("FAIL"));
+	}
+	return String(sh_data->data);
 };
 
 String smarthome::GetEinheit() {
-	return sh_data->einheit;
+	if ( ! sh_data ) {
+		return(String("FAIL"));
+	}
+	return String(sh_data->einheit);
 }
 
 int smarthome::GetLine() {
+	if ( ! sh_data ) {
+		return(-1);
+	}
 	return sh_data->line;
 };
 
 int smarthome::GetPos() {
+	if ( ! sh_data ) {
+		return(-1);
+	}
 	return sh_data->pos;
 }
 
 bool smarthome::SetData(String data) {
-	sh_data->data = data;
+	if ( ! sh_data ) {
+		return(false);
+	}
+	strcpy(sh_data->data,data.c_str());
 	return true;
 };
 
 bool smarthome::SetLine(int line) {
+	if ( ! sh_data ) {
+		return(false);
+	}
 	sh_data->line = line;
 	return true;
 }
 
 bool smarthome::IsHeadline() {
+	if ( ! sh_data ) {
+		return(false);
+	}
 	return sh_data->headline;
 }
 
+bool smarthome::EntryExists(String *name) {
+	String buffer;
+#ifdef DEBUG
+	Serial.println("loading first entry");
+	Serial.flush();
+#endif
+	while ( block ) {
+		yield();
+		delay(100);
+	}
+#ifdef DEBUG
+        Serial.println("EntryExists: blocking data");
+	Serial.flush();
+#endif
+	block=true;
+	if ( ! sh_data) {
+#ifdef DEBUG
+		Serial.println("EntryExists: unblock data");
+		Serial.flush();
+#endif
+		block=false;
+		return false;
+	}
+
+	sh_data=(SH_DATA *) sh_data->first;
+#ifdef DEBUG
+	Serial.println("copy sh_data->name to buffer");
+	Serial.flush();
+#endif
+	buffer=String(sh_data->name);
+#ifdef DEBUG
+	Serial.println("compare first entry");
+	Serial.flush();
+#endif
+	if ( buffer.compareTo(name->c_str()) == 0 ) {
+#ifdef DEBUG
+		Serial.println("first entry matches");
+		Serial.println("EntryExists: unblock data");
+		Serial.flush();
+#endif
+		block=false;
+		return true;
+	} else {
+#ifdef DEBUG
+		Serial.println("Not the firstone, going through all entrys");
+		Serial.flush();
+#endif
+		yield();
+		while(sh_data->next) {
+			sh_data = (SH_DATA *) sh_data->next;
+			buffer=sh_data->name;
+			if ( buffer.compareTo(*name) == 0 ) {
+#ifdef DEBUG
+				Serial.println("Entry found!");
+				Serial.println("EntryExists: unblock data");
+				Serial.flush();
+#endif
+				block=false;
+				return true;
+			}
+		}
+		yield();
+	}
+#ifdef DEBUG
+	Serial.println("EntryExists: unblock data");
+	Serial.flush();
+#endif
+	block=false;
+	return false;
+}
+
+bool smarthome::DelEntry(String name) {
+	SH_DATA *todelete;
+	SH_DATA *prev;
+
+#ifdef DEBUG
+	Serial.println("loading first entry");
+	Serial.flush();
+#endif
+	while ( block ) {
+		yield();
+		delay(100);
+	}
+#ifdef DEBUG
+        Serial.println("EntryExists: blocking data");
+	Serial.flush();
+#endif
+	block=true;
+
+	if ( ! sh_data ) {
+#ifdef DEBUG
+		Serial.println("EntryExists: unblocking data");
+		Serial.flush();
+#endif
+		return(false);
+	}
+	sh_data=(SH_DATA *) sh_data->first;
+	if ( String(sh_data->name).compareTo(name) == 0 ) {
+		todelete=sh_data;
+		sh_data=(SH_DATA *) sh_data->next;
+		sh_data->prev=NULL;
+		sh_data->first=sh_data;
+		while (sh_data->next) {
+			sh_data=(SH_DATA *) sh_data->next;
+			sh_data->first=todelete->next;
+		}
+		delete(todelete->name);
+		delete(todelete->device);
+		delete(todelete->reading);
+		delete(todelete->einheit);
+		delete(todelete);
+#ifdef DEBUG
+		Serial.println("EntryExists: unblocking data");
+		Serial.flush();
+#endif
+		block=false;
+		return(true);
+	} else {
+		while(sh_data->next) {
+			sh_data = (SH_DATA *) sh_data->next;
+			if ( String(sh_data->name).compareTo(name) == 0) {
+				todelete=sh_data;
+				sh_data=(SH_DATA *) sh_data->next;
+				prev=(SH_DATA *) todelete->prev;
+				sh_data->prev=(void *) prev;
+				prev->next=(void *) sh_data;
+				delete(todelete->name);
+				delete(todelete->device);
+				delete(todelete->reading);
+				delete(todelete->einheit);
+				delete(todelete);
+#ifdef DEBUG
+				Serial.println("EntryExists: unblocking data");
+				Serial.flush();
+#endif
+				block=false;
+				return(true);
+			}
+		}
+	}
+#ifdef DEBUG
+	Serial.println("EntryExists: unblocking data");
+	Serial.flush();
+#endif
+	block=false;
+	return(false);
+}
+
+bool smarthome::SetFont(int size) {
+#ifdef DEBUG
+	Serial.println("Setting up font to size: " + size);
+	Serial.flush();
+#endif
+	sh_setup.TextFont.TextFont = Font24;
+	sh_setup.TextFont.fontheight = 24;
+	sh_setup.TextFont.fontwidth=17;
+	if (size == 20 ) {
+		sh_setup.TextFont.TextFont=Font20;
+		sh_setup.TextFont.fontheight=20;
+		sh_setup.TextFont.fontwidth=14;
+	}
+	if (size == 16) {
+		sh_setup.TextFont.TextFont=Font16;
+		sh_setup.TextFont.fontheight=16;
+		sh_setup.TextFont.fontwidth=11;
+	}
+	if (size == 12 ) {
+		sh_setup.TextFont.TextFont=Font12;
+		sh_setup.TextFont.fontheight=12;
+		sh_setup.TextFont.fontwidth=7;
+	}
+	if (size == 8 ) {
+		sh_setup.TextFont.TextFont=Font8;
+		sh_setup.TextFont.fontheight=8;
+		sh_setup.TextFont.fontwidth=5;
+	}
+	return true;
+}
+
+bool smarthome::SetOrientation(int orientation) {
+#ifdef DEBUG
+	Serial.print("Setting Orientation to ");
+	Serial.println(orientation);
+	Serial.flush();
+#endif
+	sh_setup.LayOut=0;
+	sh_setup.width=DISPLAY_HEIGHT;
+	sh_setup.height=DISPLAY_WIDTH;
+	if ( orientation == 3) {
+		sh_setup.LayOut=orientation;
+		sh_setup.width=DISPLAY_WIDTH;
+		sh_setup.height=DISPLAY_HEIGHT;
+	}
+	return true;
+}
+
+int smarthome::GetOrientation() {
+	return sh_setup.LayOut;
+}
+
+int smarthome::GetWidth() {
+	return sh_setup.width;
+}
+
+int smarthome::GetHeight() {
+	return sh_setup.height;
+}
+
+bool smarthome::SetDashNum(int NumOfLine) {
+#ifdef DEBUG
+	Serial.println("Setting num of lines to: " + NumOfLine);
+	Serial.flush();
+#endif
+	if (NumOfLine > sh_setup.NumOfLines ) {
+		if ( sh_setup.LinePos ) {
+			delete sh_setup.LinePos;
+			sh_setup.LinePos=NULL;
+		}
+		sh_setup.NumOfLines=NumOfLine;
+		sh_setup.LinePos=(int *) malloc(sizeof(int)*sh_setup.NumOfLines);
+		for(int i=0; i<sh_setup.NumOfLines; i++) {
+			sh_setup.LinePos[i]=0;
+		}
+		if ( ! sh_setup.LinePos ) {
+			return false;
+		}
+		return true;
+	} else {
+		return false;
+	}
+}
+
+int smarthome::GetDashNum() {
+	return sh_setup.NumOfLines;
+}
+
+bool smarthome::SetDashPos(int num, int pos) {
+#ifdef DEBUG
+	Serial.print("Setting up Dash Line: ");
+	Serial.print(num);
+	Serial.print(" With position: ");
+	Serial.println(pos);
+	Serial.flush();
+#endif
+	sh_setup.LinePos[num] = pos;
+	return(true);
+}
+
+int smarthome::GetDashPos(int num) {
+	return(sh_setup.LinePos[num]);
+}
+
+int smarthome::GetCharWidth(bool msg) {
+	if ( msg ) {
+		return(sh_setup.MsgFont.fontwidth);
+	} else {
+		return(sh_setup.TextFont.fontwidth);
+	}
+}
+
+int smarthome::GetCharHeight(bool msg) {
+	if ( msg ) {
+		return(sh_setup.MsgFont.fontheight);
+	} else {
+		return(sh_setup.TextFont.fontheight);
+	}
+}
+
+sFONT *smarthome::GetFont(bool msg) {
+	if ( msg ) {
+		return(&sh_setup.MsgFont.TextFont);
+	} else {
+		return(&sh_setup.TextFont.TextFont);
+	}
+}
