@@ -25,15 +25,15 @@ MQTT1 wird verwendet um die Initiale Konfiguration zu laden, Telnet um Readings 
 Aktuell wird nur eine Textausgabe ohne Grafiken unterstützt.<br>
 
 Das Fhem Gerät lässt ich folgendermassen erstellen:<br><br>
-
 define \<displaname\> MQTT2_DEVICE <your mqtt server><br>
 attr \<displayname\> readingList display/get_config:* RequestConfig<br>
 attr \<displayname\> userReadings SetConfig:RequestConfig.* \{<br>
     if ( ReadingsVal($name,RequestConfig",0) eq "true") \{<br>
+        fhem("set \<mqtt2server\> publish display/conf "\\"\<Orientation\>,\<FontSize\>\"");<br>
+        fhem("set \<mqtt2server\> publish display/dash "\\"\<numofdashes\>,\<linenumber\>,\<linenumer\>,...\"");<br>
         fhem("set \<mqtt2server\> publish display/line_0 "\\"Name, \<fhem_device\>, \<reading\>, \<Einheit\>, \<position\>\\"");<br>
     \}<br>
 \}<br><br>
-
 Natürlich kann hier jedes Kommando (achtung: Perl Syntax) eingesetzt werden, das einem mqtt server Daten schickt.<br>
 Ich verwende in meinem Setup fhem als mqtt server. Dieser wird in fhem z.B. mit:<br>
 
@@ -55,12 +55,17 @@ MQTT_REQUEST_TOPIC -> Entspricht dem Topic, an welches ein "true" geschickt wird
                       wenn das Display die Configuration Requested<br>
 MQTT_SUBSCRIBE_TOPIC -> Wichtig, dass alle nachrichten des basic Topic (vor dem "/") abgeolt werden ("+")<br>
 
-Aktuell wird das Display noch 3 geteilt.<br>
-Im oberen Drittel ist Platz für 5 Zeilen<br>
-im mittleren Drittel ist Platz für 4 Zeilen<br>
-im unteren Driteel ist platz für 3 Zeilen<br>
+mqtt topic display/conf:<br>
+"0,24" -> Vertikale Ausrichtung, Fontgrösse 24<br>
 
-Ich plane das noch dynamisch zu gestalten.<br>
+-> die erste Ziffer gibt die Ausrichtung des Displays an. 0 Entspricht dabei Querformat, 3 Hochformat.<br>
+-> die zweite Ziffer gibt die Fontgrösse an. Verwendet werden können 8,12,16,20 und 24.<br>
+
+mqtt topic display/dash:<br>
+Hiermit kann das Display mit Horizontalen Linien Unterteilt werden.<br>
+"2,5,9" -> Es werden 2 Horizontalen Linien gezeichnet, Eine zwischen der 5. und 6. Zeile, eine zwischen der 9. und 10. Zeile<br>
+dabei wird mit der ersten Zahl die Anzahl der horizontalen Linien angegeben. Danach müssen kommagetrennt ganuso viele Ziffern folgen,<br>
+die jeweils Zeilennummern, nach denen die Linie gezeichnet werden soll, entsprechen.<br>
 
 Aktuell können nur Text Daten dargestellt werden.<br>
 Diese werden als Topic vom mqtt server übertragen. Dabei wird vom topic der Teil nach dem ersten "/" ausgewertet.<br>
