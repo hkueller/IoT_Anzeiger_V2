@@ -67,12 +67,14 @@ Hiermit kann das Display mit Horizontalen Linien Unterteilt werden.<br>
 dabei wird mit der ersten Zahl die Anzahl der horizontalen Linien angegeben. Danach müssen kommagetrennt ganuso viele Ziffern folgen,<br>
 die jeweils Zeilennummern, nach denen die Linie gezeichnet werden soll, entsprechen.<br>
 
-Aktuell können nur Text Daten dargestellt werden.<br>
-Diese werden als Topic vom mqtt server übertragen. Dabei wird vom topic der Teil nach dem ersten "/" ausgewertet.<br>
-Beginnt dieser mit "line_" wird das Topic ausgewertet.<br>
-die anschliessende Nummer gibt die line number an, auf welchem der Wert dargestellt werden soll.<br>
-Wird jetzt nur ein String in den Daten übertragen (wie z.B. "Solarinfo"), wird dieser als Headline (mittig) dargestellt.<br>
-In Zeile 0 wird dabei noch Datum und Uhrzeit des letzten DatenRequest von fhem hinzugefügt.<br>
+display/line_\<linenumber\><br>
+"Solarertrag,E3DC,power,W,3" <br>
+Solarertrag -> Bezeichner wird linksbündig in der Zeile (mit 3 Pixel abstand vom Rand) dargestellt<br>
+E3DC->Gerätename in fhem welcher abgefragt wird.<br>
+power -> Reading des Gerätes, das den Gewünschten Wert Enthält<br>
+Das Reading wird rechtbündig angezeigt - mit Platz für die Einheit.<br>
+W -> Einheit (sollte nicht mehr als 3 Zeichen enthalten)<br><br>
+
 Enthält der Sting mehrere Daten getrennt durch "," Werden diese folgend ausgewertet:<br><br>
 \<Name\>\[,\<fhem_device\>,\<reading\>,\[\<Einheit\>\],\<position\>\]<br><br>
 Name = Titel der auf dem Display Linksbündig (position beachten) in der Zeile dargestellt wird.<br>
@@ -80,9 +82,13 @@ fhem_device = Device name in FHEM von welchem das Reading verwendet werden soll 
 reading = Reading des fhem_device, welches die gewünschten Daten liefert<br>
 Einheit = Wenn angegeben wird der String hinter den Daten angezeigt (Einheit des Wertes)<br>
 position = Name wird um anzahl <position> zeichen nach Rechts eingerückt<br><br>
-Wird nur Name angegeben, wertet IOT_Anzeiger_v2 das als Überschrift aus.<br><br>
 
-Noch ein wichtiger Punkt zur Zeile 0:<br>
-Zeile 0 Zeigt nur eine Überschrift an!<br>
-IOT_Anzeiger_V2 startet zusätzlich einen webserver auf port 80. Hier können die Anzeigen des Displays zusätzlich ein einemn Browser dargetellt werden.<br>
-Definitionen für die Zeile 0, die KEINE Überschrift sind, werden ebenfalls auf der Webseite dargestellt, nicht jedoch auf dem e-Ink display.<br>
+"Wetterinformationen" <br>
+Enthält der Eintrag nur einen String, wird dieser als Headline erkannt, und in der Zeile Mittig Platziert.<br><br>
+
+Dazu gild noch, das linenumber 0 (also display/line_0) eine Sonderfunktion hat. <br>
+Dargestellt werden auf dem Display nur Headline Einträge. In dieser Zeile wird der String Linksbündig dargestellt,
+und Rechtbündig noch Datum und Uhzeit der letzten Datenaktualisierung hinzugefügt.<br>
+Andere Einträge, die mit fhem Device und Reading angegeben werden, werden ausschliesslich auf der <br>
+Website (nur http (port 80)), die von dem Device ausgeliefert wird, dargestellt.<br>
+
