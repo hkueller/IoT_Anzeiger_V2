@@ -3,6 +3,7 @@
 smarthome::smarthome() {
 	sh_data=NULL;
 	SetFont(24);
+	SetMsgFont(24);
 	SetOrientation(0);
 #ifdef DEBUG
 	Serial.println("smarthome: unblock data");
@@ -14,6 +15,7 @@ smarthome::smarthome() {
 smarthome::smarthome(String *show_name, int line) {
 	add(show_name,line);
 	SetFont(24);
+	SetMsgFont(24);
 	SetOrientation(0);
 };
 
@@ -21,6 +23,7 @@ smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, 
 	String buffer = "";
 	add(show_name, fhem_dev, fhem_reading, &buffer, einheit, 0, 0);
 	SetFont(24);
+	SetMsgFont(24);
 	SetOrientation(0);
 };
 
@@ -28,12 +31,14 @@ smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, 
 	String buffer = "";
 	add(show_name, fhem_dev, fhem_reading, &buffer, disp_line, disp_pos);
 	SetFont(24);
+	SetMsgFont(24);
 	SetOrientation(0);
 };
 
 smarthome::smarthome(String *show_name, String *fhem_dev, String *fhem_reading, String *fhem_data, String *einheit, int disp_line, int disp_pos) {
 	add(show_name, fhem_dev, fhem_reading, fhem_data, disp_line, disp_pos);
 	SetFont(24);
+	SetMsgFont(24);
 	SetOrientation(0);
 };
 	
@@ -455,34 +460,39 @@ bool smarthome::DelEntry(String name) {
 	return(false);
 }
 
-bool smarthome::SetFont(int size) {
+void smarthome::SetFont(SH_FONT *font, int size) {
 #ifdef DEBUG
 	Serial.println("Setting up font to size: " + size);
 	Serial.flush();
 #endif
-	sh_setup.TextFont.TextFont = Font24;
-	sh_setup.TextFont.fontheight = 24;
-	sh_setup.TextFont.fontwidth=17;
-	if (size == 20 ) {
-		sh_setup.TextFont.TextFont=Font20;
-		sh_setup.TextFont.fontheight=20;
-		sh_setup.TextFont.fontwidth=14;
+	font->fontheight = size;
+	font->TextFont = Font24;
+	font->fontwidth=17;
+	if ( size == 20 ) {
+		font->TextFont=Font20;
+		font->fontwidth=14;
 	}
-	if (size == 16) {
-		sh_setup.TextFont.TextFont=Font16;
-		sh_setup.TextFont.fontheight=16;
-		sh_setup.TextFont.fontwidth=11;
+	if ( size == 16 ) {
+		font->TextFont=Font16;
+		font->fontwidth=11;
 	}
-	if (size == 12 ) {
-		sh_setup.TextFont.TextFont=Font12;
-		sh_setup.TextFont.fontheight=12;
-		sh_setup.TextFont.fontwidth=7;
+	if ( size == 12 ) {
+		font->TextFont=Font12;
+		font->fontwidth=7;
 	}
-	if (size == 8 ) {
-		sh_setup.TextFont.TextFont=Font8;
-		sh_setup.TextFont.fontheight=8;
-		sh_setup.TextFont.fontwidth=5;
+	if ( size == 8 ) {
+		font->TextFont=Font8;
+		font->fontwidth=5;
 	}
+}
+
+bool smarthome::SetFont(int size) {
+	SetFont(&sh_setup.TextFont, size);
+	return true;
+}
+
+bool smarthome::SetMsgFont(int size) {
+	SetFont(&sh_setup.MsgFont, size);
 	return true;
 }
 

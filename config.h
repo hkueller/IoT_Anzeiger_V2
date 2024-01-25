@@ -27,12 +27,5 @@
 #define DISPLAY_WIDTH 300
 //define intervall to pull updates out of the fhem server
 #define UPDATE_MINUTE 1
-#define INITFONT Font24
-//#define LANDSCAPE
-#define FONTSIZE_24
-//#define FONTSIZE_20
-//#define FONTSIZE_16
-//#define FONTSIZE_12
-//#define FONTSIZE_8
-#define APSID IOTAnzeiger
+#define APSID "IOT Anzeiger"
 #endif

@@ -12,11 +12,11 @@
 void removequote(String *data);
 class smarthome {
 
-struct SH_MSG_FONT {
+/*struct SH_MSG_FONT {
 	sFONT TextFont=Font24;
 	int fontwidth=17;
 	int fontheight=24;
-};
+};*/
 
 struct SH_FONT {
 	sFONT TextFont;
@@ -52,7 +52,7 @@ struct SH_SETUP {
 	int NumOfLines=0;
 	int *LinePos=NULL;
 	SH_FONT TextFont;
-	SH_MSG_FONT MsgFont;
+	SH_FONT MsgFont;
 };
 
 public:
@@ -71,6 +71,9 @@ public:
 	String GetData();
 	String GetEinheit();
 	bool SetFont(int size);
+	bool SetMsgFont(int size);
+	void SetFont(SH_FONT *font, int size);
+	bool SetMsg(int size);
 	bool SetOrientation(int orientation);
 	int GetOrientation();
 	int GetWidth();

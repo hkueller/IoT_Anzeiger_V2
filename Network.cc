@@ -112,7 +112,7 @@ void network::begin() {
 	lasttime=millis() - 60000*60 + 20;
 }
 
-int network::testNet(display *disp) {
+int network::testNet(display *disp, smarthome *config) {
 	int rc=0;
 	int wifi_retry = 0;
 #ifdef DEBUG
@@ -128,7 +128,7 @@ int network::testNet(display *disp) {
 		Serial.println("Network Offline, Reconnect");
         	Serial.flush();
 #endif
-		disp->Message("Network Offline!");
+		disp->Message("Network Offline!", config);
 		WiFi.disconnect();
 		delay(100);
 		wifimanager.setConfigPortalTimeout(300);
@@ -313,7 +313,6 @@ void network::FhemDisconnect() {
 
 void network::UpdateData(display *disp, smarthome *data) {
 	String Result;
-	//unsigned long lasttime;
 
 	if ( ! fhemclient->connected()) {
 		network::FhemDisconnect();
@@ -344,7 +343,6 @@ void network::UpdateData(display *disp, smarthome *data) {
 				Serial.println(data->GetDev() + "->" + data->GetReading() );
 				Serial.flush();
 #endif
-				//if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
 				if (FhemGetData(&Result, data->GetDev(), data->GetReading()) == 1 ) {
 					data->SetData(Result);
 					break;
@@ -360,7 +358,6 @@ void network::UpdateData(display *disp, smarthome *data) {
 				Serial.println(data->GetDev() + "->" + data->GetReading() );
 				Serial.flush();
 #endif
-				//if (FhemGetData(&Result, data->GetDev(), data->GetReading(), &lasttime) == 1 ) {
 				if (FhemGetData(&Result, data->GetDev(), data->GetReading()) == 1 ) {
 					data->SetData(Result);
 					break;
@@ -408,7 +405,6 @@ void network::UpdateData(display *disp, smarthome *data) {
 #endif
 };
 
-//int network::FhemGetData(String *result, const String device, const String reading, long unsigned int *lasttime) {
 int network::FhemGetData(String *result, const String device, const String reading) {
 	String buffer;
 	*result="";
@@ -429,7 +425,6 @@ int network::FhemGetData(String *result, const String device, const String readi
 	Serial.println("Waiting for answer");
        	Serial.flush();
 #endif
-	//*lasttime=millis();
 	while(fhemclient->available() < 1 ) {yield();}
 #ifdef DEBUG
 	Serial.println("Reading answer");
@@ -474,7 +469,7 @@ void network::handleNet(smarthome *sm, display *disp) {
 #endif
 	handleWeb(sm);
 	yield();
-	if ( millis() > lasttime + (1000*300) ) {
+	if ( millis() > (lasttime + (1000*300)) ) {
 		RequestConfig();
 		lasttime=millis();
 	}

@@ -1,8 +1,19 @@
 #ifndef __NETWORK_H
 #define __NETWORK_H
 
-#include <DNSServer.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#include <Arduino.h>
+#include <WiFi.h>
+//#include <ESPAsyncWebServer.h>
+//#include <AsyncTCP.h>
+#endif
+
+#if defined(ARDUINO_ARCH_ESP8266)
 #include <ESP8266WiFi.h>
+#endif
+
+#include <DNSServer.h>
+
 #include <WiFiManager.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
@@ -30,7 +41,7 @@ private:
 public:
 	network();
 	void begin();
-	int testNet(display *disp);
+	int testNet(display *disp, smarthome *config);
 	void handleWeb(smarthome *data);
 	void UpdateData(display *disp, smarthome *data);
 	//int FhemGetData(String *result,const String device, const String reading, long unsigned int *lasttime);

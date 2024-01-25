@@ -29,9 +29,9 @@
 #include <Network.h>
 #include <Data.h>
 
+smarthome sm;
 display disp;
 network net;
-smarthome sm;
 bool mutex=false;
 bool firstrun=true;
 
@@ -44,7 +44,7 @@ void setup() {
 	Serial.begin(115200);
 	Serial.println("Setup starting");
 #endif
-	disp.begin();
+	disp.begin(&sm);
 #ifdef DEBUG
 	Serial.begin(115200);
 #endif
@@ -52,18 +52,11 @@ void setup() {
 	Serial.println("Starting Network");
 	Serial.flush();
 #endif
-	disp.Message("Starting up Network");
+	disp.Message("Starting up Network", &sm);
 	net.begin();
-	disp.Message("Network Up");
-/*#ifdef DEBUG
-	Serial.println("Starting Data Reading");
-	Serial.flush();
-#endif
-	disp.Message("Reading Home Data");
-	net.UpdateData(&disp,&sm);
-	disp.updatelast();*/
+	disp.Message("Network Up", &sm);
 	if(! sm.SetFirst()) {
-		disp.Message("Waiting for config data");
+		disp.Message("Waiting for config data",&sm);
 	}
 #ifdef DEBUG
 	Serial.println("Setup completed");
@@ -77,12 +70,12 @@ void loop() {
 		return;
 	}
 	// put your main code here, to run repeatedly:
-	if ( net.testNet(&disp) == 1 ) {
+	if ( net.testNet(&disp, &sm) == 1 ) {
 #ifdef DEBUG
 		Serial.println("Network Restarted\nLoading NetScreen");
 		Serial.flush();
 #endif
-		disp.Message("Network Up");
+		disp.Message("Network Up",&sm);
 #ifdef DEBUG
 		Serial.println("Loading FHEM Data");
 		Serial.flush();

@@ -3,8 +3,8 @@
 #set -x
 
 if sed -e "/^#/d" platformio.ini|grep -q upload_protocol; then
-	if [ "$(grep upload_protocol platformio.ini|cut -d "=" -f 2|cut -d " " -f 2)" == "espota" ]; then
-		node=$(grep upload_port platformio.ini|cut -d"=" -f 2|cut -d " " -f 2)
+	if [ "$(sed -e "/^#/d" platformio.ini|grep upload_protocol|cut -d "=" -f 2|cut -d " " -f 2)" == "espota" ]; then
+		node=$(sed -e "/^#/d" platformio.ini|grep upload_port|cut -d"=" -f 2|cut -d " " -f 2)
 		./espota.py -i $node -f .pio/build/nodemcu/firmware.bin -d -r
 	fi
 else
