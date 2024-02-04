@@ -109,7 +109,7 @@ void network::begin() {
 	Serial.println("NETWORK SETUP FINISHED");
 	Serial.flush();
 #endif
-	lasttime=millis() - 60000*60 + 20;
+	lastconfig=millis() + 1000*60;
 }
 
 int network::testNet(display *disp, smarthome *config) {
@@ -469,9 +469,18 @@ void network::handleNet(smarthome *sm, display *disp) {
 #endif
 	handleWeb(sm);
 	yield();
-	if ( millis() > (lasttime + (1000*300)) ) {
+#ifdef DEBUG
+	Serial.print("millies: ");
+	Serial.print(millis());
+	Serial.print(" lasttime: ");
+	Serial.println(lastconfig);
+#endif
+	if ( millis() > (lastconfig + (1000*600)) ) {
+#ifdef DEBUG
+		Serial.println("Requesting Config");
+#endif
 		RequestConfig();
-		lasttime=millis();
+		lastconfig=millis();
 	}
 }
 

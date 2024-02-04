@@ -61,6 +61,8 @@ public:
 	String ReturnSeconds();
 	void RequestConfig();
 	void ConfigDone();
-	long unsigned int lasttime;
+	//long unsigned int lasttime=0;
+	long unsigned int lastconfig=0;
+
 };
 #endif
