@@ -116,12 +116,14 @@ void display::LoadFrame(smarthome *data) {
 }
 
 void display::PrintHeadLine(String head, String date, smarthome *config) {
-	paint->DrawStringAt(3,FIRSTLINE,head.c_str(),config->GetFont(DISP),COLORED);
-	paint->DrawStringAt((config->GetWidth()-2)-(date.length() * config->GetCharWidth(DISP)),FIRSTLINE,date.c_str(),config->GetFont(DISP),COLORED);
+	paint->DrawFilledRectangle(0,FIRSTLINE,config->GetWidth(),config->GetCharHeight(DISP),COLORED);
+	paint->DrawStringAt(3,FIRSTLINE,head.c_str(),config->GetFont(DISP),UNCOLORED);
+	paint->DrawStringAt((config->GetWidth()-2)-(date.length() * config->GetCharWidth(DISP)),FIRSTLINE,date.c_str(),config->GetFont(DISP),UNCOLORED);
 }
 
 void display::PrintHeadLine(int linenum, String head, smarthome *config) {
-	paint->DrawStringAt((((config->GetWidth()-2)/2)-((head.length()/2))*config->GetCharWidth(DISP)),FIRSTLINE+(linenum*config->GetCharHeight(DISP)),head.c_str(),config->GetFont(DISP), COLORED);
+	paint->DrawFilledRectangle(0,FIRSTLINE+(linenum*config->GetCharHeight(DISP)),config->GetWidth(),((linenum+1)*config->GetCharHeight(DISP)),COLORED);
+	paint->DrawStringAt((((config->GetWidth()-2)/2)-((head.length()/2))*config->GetCharWidth(DISP)),FIRSTLINE+(linenum*config->GetCharHeight(DISP)),head.c_str(),config->GetFont(DISP), UNCOLORED);
 }
 
 void display::PrintValueLine(int x, int linenum, int left, String name, String type, String value, smarthome *config) {
