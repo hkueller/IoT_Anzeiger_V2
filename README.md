@@ -71,8 +71,25 @@ ist dem ESP keine Netzwerkkonfig bekannt, meldet dieser sich als AccessPoint mit
 Mit diesem muss man sich Verbinden, und dann der Dokumentation des WiFiManager Projektes folgen.<br>
 
 ## configuration in FHEM
-IOT_Anzeiger_V2 Verwendet ein MQTT2 Device in FHEM, sowie die Telnet Schnittstelle von FHEM.
-MQTT1 wird verwendet um die Initiale Konfiguration zu laden, Telnet um Readings von Geräten abzufragen.
+Zur Verwendung von IOT_Anzeiger_V2 ist ein MQTT Server notwendig.
+Hier kann jeder beliebige MQTT Server verwendet werden. Der Einfachheit halber hier
+das Setup eine solchen in FHEM (fhem liefert einen integrierten MQTT mit - dazu gibt es mehr im fhem wiki)
+```
+define mqtt2server MQTT_SERVER 1883 global
+```
+
+Wichtig: vor dem Übersetzen die Netzwerk Konfiguration (fhem-server, mqtt) anpassen!<br>
+Dies wird in der config.h erledigt:<br>
+
+`FHEM_HOST` -> hier wird die IP oder der Hostname der FHEM Instanz eingetragen<br>
+`FHEM_PORT` -> Telnet Port Nummer der FHEM Instanz (default: 7072)<br>
+`MQTT_SERVER` -> IP oder Hostname des MQTT Servers (FHEM Internet MQTT = Identisch to FHEM_HOST)<br>
+`MQTT_REQUEST_TOPIC` -> Entspricht dem Topic, an welches ein `true` geschickt wird,<br>
+                wenn das Display die Konfiguration von FHEM erfraegt.<br>
+`MQTT_SUBSCRIBE_TOPIC` -> Wichtig, dass alle nachrichten des basic Topic (for dem "/") abgeholt werden ("+")<br>
+
+IOT_Anzeiger_V2 Verwendet ein MQTT2 Device in FHEM, sowie die Telnet Schnittstelle von FHEM.<br>
+MQTT1 wird verwendet um die Initiale Konfiguration zu laden, Telnet um Readings von Geräten abzufragen.<br>
 Aktuell wird nur eine Textausgabe ohne Grafiken unterstützt.<br>
 
 Das Fhem Gerät lässt ich folgendermassen erstellen:<br>
@@ -88,24 +105,8 @@ attr <displayname> userReadings SetConfig:RequestConfig.* {
 }
 ```
 Natürlich kann hier jedes Kommando (achtung: Perl Syntax) eingesetzt werden, das einem mqtt server Daten schickt.<br>
-Ich verwende in meinem Setup fhem als mqtt server. Dieser wird in fhem z.B. mit:<br>
-```
-define mqtt2server MQTT_SERVER 1883 global
-```
-aufgesetzt.<br>
 
 `display/line_0` ist dabei das sogenannte Topic.<br>
-
-dieses wird neben anderen wichtigen informationen in `config.h` konfiguriert.<br>
-Dabei gild:<br>
-
-`FHEM_HOST` -> hier wird IP oder Hostname der FHEM Instanz<br>
-`FHEM_PORT` -> Telnet Port Nummer der FHEM Instanz (default: 7072)<br>
-`MQTT_SERVER` -> IP oder Hostname des mqtt servers<br>
-               wird der FHEM eigene verwendet ist dieser identisch mit dem FHEM_HOST<br>
-`MQTT_REQUEST_TOPIC` -> Entspricht dem Topic, an welches ein "true" geschickt wird,<br>
-                      wenn das Display die Configuration Requested<br>
-`MQTT_SUBSCRIBE_TOPIC` -> Wichtig, dass alle nachrichten des basic Topic (vor dem "/") abgeolt werden ("+")<br>
 
 ### mqtt topic `display/conf`:<br>
 `"0,24"` -> Vertikale Ausrichtung, Fontgrösse 24<br>
