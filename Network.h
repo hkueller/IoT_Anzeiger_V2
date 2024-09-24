@@ -36,7 +36,7 @@ private:
 	WiFiServer *server;
 	WiFiClient *fhemclient=0;
 	WiFiClient mqtt_client;
-	void reconnect();
+	void mqttConnect();
 	PubSubClient *mqtt;
 public:
 	network();

@@ -16,6 +16,7 @@ public:
 	display();
 	void begin(smarthome *config);
 	void Message(String message, smarthome *config);
+	void Message(String line1, String line2, smarthome *config);
 	void LoadFrame(smarthome *data);
 	void PrintHeadLine(String head, String data, smarthome *config);
 	void PrintHeadLine(int linenum, String head, smarthome *config);

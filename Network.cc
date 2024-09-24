@@ -115,6 +115,7 @@ void network::begin() {
 int network::testNet(display *disp, smarthome *config) {
 	int rc=0;
 	int wifi_retry = 0;
+	String reconmes="";
 #ifdef DEBUG
 	Serial.println("testNet() running");
         Serial.flush();
@@ -123,12 +124,14 @@ int network::testNet(display *disp, smarthome *config) {
 	Serial.println("checking uptime");
 	Serial.flush();
 #endif
-	while(WiFi.status() != WL_CONNECTED && wifi_retry < 5 ) {
+	while(WiFi.status() != WL_CONNECTED && wifi_retry < 15 ) {
 #ifdef DEBUG
 		Serial.println("Network Offline, Reconnect");
         	Serial.flush();
 #endif
-		disp->Message("Network Offline!", config);
+		reconmes="Try to Reconnect: ";
+		reconmes+=wifi_retry;
+		disp->Message("Network Offline!", reconmes, config);
 		WiFi.disconnect();
 		delay(100);
 		wifimanager.setConfigPortalTimeout(300);
@@ -142,9 +145,11 @@ int network::testNet(display *disp, smarthome *config) {
 		Serial.println("Network Offline, Reconnect failed, forcing system reset");
         	Serial.flush();
 #endif
+		disp->Message("Network Offline", "Rebooting", config);
 		ESP.restart();
 	}
 	if((WiFi.status() == WL_CONNECTED) && ( rc == 1) ) {
+		disp->Message("Network Reconnected","Setting up Network Services", config);
 #ifdef DEBUG
 		Serial.println("Checking for OTA");
         	Serial.flush();
@@ -182,6 +187,7 @@ int network::testNet(display *disp, smarthome *config) {
 #endif
 		}
 		network::FhemConnect();
+		network::mqttConnect();
 		yield();
 	}
 	return(rc);
@@ -395,7 +401,6 @@ void network::UpdateData(display *disp, smarthome *data) {
         	Serial.flush();
 #endif
 		fhemclient->print("quit\n");
-		//network::FhemDisconnect();
 	} else {
 		fhemclient->print("quit\n");
 	}
@@ -448,7 +453,11 @@ void network::handleNet(smarthome *sm, display *disp) {
 	Serial.println("Running mqtt loop");
 	Serial.flush();
 #endif
-	mqtt->loop();
+	if(mqtt->connected()) {
+		mqtt->loop();
+	} else {
+		network::mqttConnect();
+	}
 	yield();
 #ifdef DEBUG
 	Serial.println("Running OTA");
@@ -542,24 +551,29 @@ void network::ConfigDone() {
 	mqtt->publish(MQTT_REQUEST_TOPIC,"false");
 }
 
-void network::reconnect() {
-	while (!mqtt->connected()) {
-		Serial.print("Attempting MQTT connection...");
-		// Create a random client ID
-		// Attempt to connect
-		if (mqtt->connect(clientId.c_str())) {
-			Serial.println("connected");
-			// Once connected, publish an announcement...
-			mqtt->publish(MQTT_REQUEST_TOPIC, "false");
-			// ... and resubscribe
-			mqtt->subscribe(MQTT_SUBSCRIBE_TOPIC);
-		} else {
-			Serial.print("failed, rc=");
-			Serial.print(mqtt->state());
-			Serial.println(" try again in 5 seconds");
-			// Wait 5 seconds before retrying
-			delay(5000);
-		}
-  	}
+void network::mqttConnect() {
+	Serial.print("Attempting MQTT connection...");
+	// Create a random client ID
+	// Attempt to connect
+	mqtt->setServer(MQTT_SERVER,MQTT_PORT);
+	mqtt->setCallback(callback);
+	clientId += String(random(0xffff), HEX);
+#ifdef DEBUG
+	Serial.print("Attempting MQTT connection...");
+	Serial.flush();
+#endif
+	if (mqtt->connect(clientId.c_str())) {
+		Serial.println("connected");
+		// Once connected, publish an announcement...
+		mqtt->publish(MQTT_REQUEST_TOPIC, "false");
+		// ... and resubscribe
+		mqtt->subscribe(MQTT_SUBSCRIBE_TOPIC);
+	} else {
+		Serial.print("failed, rc=");
+		Serial.print(mqtt->state());
+		Serial.println(" try again in 5 seconds");
+		// Wait 5 seconds before retrying
+		delay(5000);
+	}
 }
 

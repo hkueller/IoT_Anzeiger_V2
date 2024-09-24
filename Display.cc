@@ -41,6 +41,33 @@ void display::Message(String message, smarthome *config) {
 	epd.DisplayFrame(framebuffer);
 }
 
+void display::Message(String line1, String line2, smarthome *config) {
+	paint->Clear(UNCOLORED);
+	paint->SetRotate(config->GetOrientation());
+	paint->DrawStringAt(\
+		((config->GetWidth() -2)/2) - ((String(APSID).length()*config->GetCharWidth(MSG))/2),\
+		((config->GetHeight()-2)/2)-config->GetCharHeight(MSG),\
+		APSID,\
+		config->GetFont(MSG),\
+		COLORED\
+	);
+	paint->DrawStringAt(\
+		((config->GetWidth()-2)/2) - ((line1.length()*config->GetCharWidth(MSG))/2),\
+		(config->GetHeight()-2)/2,\
+		line1.c_str(),\
+		config->GetFont(MSG),\
+		COLORED\
+	);
+	paint->DrawStringAt(\
+		((config->GetWidth()-2)/2) - ((line2.length()*config->GetCharWidth(MSG))/2),\
+		((config->GetHeight()-2)/2)+config->GetCharHeight(MSG),\
+		line2.c_str(),\
+		config->GetFont(MSG),\
+		COLORED\
+	);
+	epd.DisplayFrame(framebuffer);
+}
+
 void display::LoadFrame(smarthome *data) {
 	paint->Clear(UNCOLORED);
 	paint->SetRotate(data->GetOrientation());
