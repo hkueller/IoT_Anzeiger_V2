@@ -24,6 +24,12 @@ struct SH_FONT {
 	int fontheight;
 };
 
+struct SH_MQTT {
+	bool avail=false;
+	String data;
+	String topic;
+};
+
 struct SH_DATA {
         //Some pointers to manage memory
 	void *first;
@@ -95,10 +101,12 @@ public:
 	bool IsHeadline();
 	bool EntryExists(String *name);
 	bool DelEntry(String name);
-
+	void SetMqtt(String data, String topic);
+	int HandleMQTT();
 private:
 	SH_DATA * sh_data=NULL;
 	SH_SETUP sh_setup;
 	bool block;
+	SH_MQTT mqtt_new[MQTT_DEPTH];
 };
 #endif

@@ -197,24 +197,12 @@ bool smarthome::SetFirst() {
 		yield();
 		delay(100);
 	}
-#ifdef DEBUG
-        Serial.println("SetFirst: blocking data");
-	Serial.flush();
-#endif
 	block=true;
 	if ( ! sh_data ) {
-#ifdef DEBUG
-		Serial.println("SetFirst: unblock data");
-		Serial.flush();
-#endif
 		block=false;
 		return false;
 	}
 	sh_data = (SH_DATA *) sh_data->first;
-#ifdef DEBUG
-	Serial.println("SetFirst: unblock data");
-	Serial.flush();
-#endif
 	block=false;
 	return true;
 };
@@ -537,11 +525,11 @@ bool smarthome::SetDashNum(int NumOfLine) {
 		}
 		sh_setup.NumOfLines=NumOfLine;
 		sh_setup.LinePos=(int *) malloc(sizeof(int)*sh_setup.NumOfLines);
-		for(int i=0; i<sh_setup.NumOfLines; i++) {
-			sh_setup.LinePos[i]=0;
-		}
 		if ( ! sh_setup.LinePos ) {
 			return false;
+		}
+		for(int i=0; i<sh_setup.NumOfLines; i++) {
+			sh_setup.LinePos[i]=0;
 		}
 		return true;
 	} else {
@@ -561,12 +549,20 @@ bool smarthome::SetDashPos(int num, int pos) {
 	Serial.println(pos);
 	Serial.flush();
 #endif
-	sh_setup.LinePos[num] = pos;
-	return(true);
+	if(!sh_setup.LinePos) {
+		sh_setup.LinePos[num] = pos;
+		return(true);
+	} else {
+		return(false);
+	}
 }
 
 int smarthome::GetDashPos(int num) {
-	return(sh_setup.LinePos[num]);
+	if(sh_setup.LinePos) {
+		return(sh_setup.LinePos[num]);
+	} else {
+		return 0;
+	}
 }
 
 int smarthome::GetCharWidth(bool msg) {
@@ -591,4 +587,154 @@ sFONT *smarthome::GetFont(bool msg) {
 	} else {
 		return(&sh_setup.TextFont.TextFont);
 	}
+}
+
+void smarthome::SetMqtt(String data, String topic) {
+	for(int mqtt_data=0; mqtt_data < MQTT_DEPTH; mqtt_data ++) {
+		if (! mqtt_new[mqtt_data].avail) {
+			mqtt_new[mqtt_data].data=data;
+			mqtt_new[mqtt_data].topic=topic;
+			mqtt_new[mqtt_data].avail=true;
+			break;
+		}
+	}
+}
+
+int smarthome::HandleMQTT() {
+	String topic_number;
+	String name;
+	String data;
+	String dev;
+	String reading;
+	String einheit;
+	String pos;
+	int return_code=0;
+	int deli=0;
+
+	for ( int mqtt_data=0; mqtt_data < MQTT_DEPTH; mqtt_data ++) {
+		if(mqtt_new[mqtt_data].avail) {
+			return_code=1;
+			if ( mqtt_new[mqtt_data].topic.compareTo("conf_done") == 0 ) {
+				return_code=2;
+			}
+			if ( mqtt_new[mqtt_data].topic.compareTo("conf") == 0 ) {
+	#ifdef DEBUG
+				Serial.println("Loading configuration with MQTT");
+	#endif
+				deli=mqtt_new[mqtt_data].data.indexOf(",");
+				if( deli > 1) {
+					name=mqtt_new[mqtt_data].data.substring(0,deli);
+					data=mqtt_new[mqtt_data].data.substring(deli+1);
+					removequote(&name);
+	#ifdef DEBUG
+					Serial.println("name contain: " +name);
+	#endif
+					SetOrientation(name.toInt());
+				}
+	#ifdef DEBUG
+				Serial.println("after orientation, data is: " + data);
+	#endif
+				removequote(&data);
+				SetFont(data.toInt());
+	#ifdef DEBUG
+				Serial.println("Fontheight is set to: " + String(GetCharHeight(false)));
+	#endif
+			}
+			if ( mqtt_new[mqtt_data].topic.compareTo("dash") == 0 ) {
+	#ifdef DEBUG
+				Serial.println("loading dashes to draw");
+	#endif
+				deli=mqtt_new[mqtt_data].data.indexOf(",");
+				if(deli > -1) {
+					name=mqtt_new[mqtt_data].data.substring(0,deli);
+					data=mqtt_new[mqtt_data].data.substring(deli+1);
+					removequote(&name);
+					//sh_setup.NumOfLines=name.toInt();
+					SetDashNum(name.toInt());
+				}
+				for(int i = 0; i < GetDashNum(); i++) {
+					deli=data.indexOf(",");
+					if(deli > -1) {
+						name=data.substring(0,deli);
+						data=data.substring(deli,1);
+					}
+					removequote(&name);
+					//sh_setup.LinePos[i] = name.toInt();
+					SetDashPos(i,name.toInt());
+				}
+			}
+			deli=mqtt_new[mqtt_data].topic.indexOf("_");
+			if ( deli > -1 ) {
+				topic_number=mqtt_new[mqtt_data].topic.substring(deli+1);
+				mqtt_new[mqtt_data].topic=mqtt_new[mqtt_data].topic.substring(0,deli);
+			}
+	#ifdef DEBUG
+			Serial.println("check topic: " + mqtt_new[mqtt_data].topic + "\n" + "check line:  " + topic_number);
+	#endif
+			if ( mqtt_new[mqtt_data].topic.compareTo("line") == 0 ) {
+				deli=mqtt_new[mqtt_data].data.indexOf(",");
+				if(deli > -1) {
+					name=mqtt_new[mqtt_data].data.substring(0,deli);
+					data=mqtt_new[mqtt_data].data.substring(deli+1);
+					removequote(&name);
+					deli=data.indexOf(",");
+					if(deli > -1) {
+						dev=data.substring(0,deli);
+						data=data.substring(deli+1);
+					} else {
+						dev=data;
+					}
+					removequote(&dev);
+					deli=data.indexOf(",");
+					if(deli > -1) {
+						reading=data.substring(0,deli);
+						data=data.substring(deli+1);
+					} else {
+						reading=data;
+					}
+					removequote(&reading);
+					deli=data.indexOf(",");
+					if(deli > -1) {
+						einheit=data.substring(0,deli);
+						data=data.substring(deli+1);
+					} else {
+						einheit=data;
+					}
+					removequote(&einheit);
+					deli=data.indexOf(",");
+					if(deli > -1) {
+						pos=data.substring(0,deli);
+						data=data.substring(deli+1);
+					} else {
+						pos=data;
+					}
+					removequote(&pos);
+					if ( ! EntryExists(&name) ) {
+						add(&name,&dev,&reading,&einheit,topic_number.toInt(),pos.toInt());
+						yield();
+					}
+				} else {
+	  				name=mqtt_new[mqtt_data].data;
+					while(name.indexOf('"') > -1) {
+						deli=name.indexOf('"');
+						if ( deli == 0 ) {
+							name=name.substring(deli+1);
+						} else {
+							name=name.substring(0,deli);
+						}
+					}
+					if ( ! EntryExists(&name) ) {
+						add(&name,topic_number.toInt());
+						yield();
+					}
+	  			}
+		#ifdef DEBUG
+				Serial.println("Name: " + name);
+		#endif
+			}
+			//put handling for data here
+			mqtt_new[mqtt_data].avail=false;
+		}
+	}
+	return(return_code);
 }
