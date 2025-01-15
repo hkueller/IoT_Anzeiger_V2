@@ -19,6 +19,7 @@
 #define MQTT_PORT 1883
 #define MQTT_REQUEST_TOPIC "display/get_config"
 #define MQTT_SUBSCRIBE_TOPIC "display/+"
+#define MQTT_DEPTH 40
 /*
  * Display Setup
  */

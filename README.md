@@ -101,6 +101,8 @@ attr <displayname> userReadings SetConfig:RequestConfig.* {
         fhem("set <mqtt2server> publish display/conf "\"<Orientation>,<FontSize>\"");
         fhem("set <mqtt2server> publish display/dash "\"<numofdashes>,<linenumber>,<linenumer>,...\"");
         fhem("set <mqtt2server> publish display/line_0 "\"Name, <fhem_device>, <reading>, <Einheit>, <position>\"");
+        #put additional config lines here
+        fhem("set <mqtt2server> publish display/conf_done \"true\"");
     }
 }
 ```
@@ -145,3 +147,7 @@ und Rechtbündig noch Datum und Uhzeit der letzten Datenaktualisierung hinzugef�
 Andere Einträge, die mit fhem Device und Reading angegeben werden, werden ausschliesslich auf der <br>
 Website (nur http (port 80)), die von dem Device ausgeliefert wird, dargestellt.<br>
 
+### mqtt topic `display/conf_done`:<br>
+Das sollte nach abschluss aller konfigurations Daten gesendet werden.<br>
+Das sorgt dafür das der Config Modus beendet wird, Die Werte von FHEM geholt werden,
+und das E-Ink Display mit den Daten upgedated wird.

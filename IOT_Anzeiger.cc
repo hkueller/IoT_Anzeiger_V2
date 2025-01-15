@@ -65,6 +65,8 @@ void setup() {
 }
 
 void loop() {
+	int mqtt_return;
+
 	if ( mutex ) {
 		yield();
 		return;
@@ -72,11 +74,7 @@ void loop() {
 	// put your main code here, to run repeatedly:
 	if ( net.testNet(&disp, &sm) == 1 ) {
 #ifdef DEBUG
-		Serial.println("Network Restarted\nLoading NetScreen");
-		Serial.flush();
-#endif
-		disp.Message("Network Up",&sm);
-#ifdef DEBUG
+		Serial.println("Network Restarted");
 		Serial.println("Loading FHEM Data");
 		Serial.flush();
 #endif
@@ -87,10 +85,10 @@ void loop() {
 #endif
 		disp.updatelast();
 	}
-#ifdef DEBUG
+/*#ifdef DEBUG
 	Serial.println("Handle Net");
 	Serial.flush();
-#endif
+#endif*/
 	net.handleNet(&sm, &disp);
 	if(sm.SetFirst() == true) {
 		if ( disp.GetUpdate() == true) {
@@ -107,12 +105,17 @@ void loop() {
 			yield();
 		}
 	}
-	if(firstrun) {
-#ifdef DEBUG
-		Serial.println("Requesting transfer of config data");
-		Serial.flush();
-#endif
-		net.RequestConfig();
-		firstrun=false;
+	mqtt_return=sm.HandleMQTT();
+	switch(mqtt_return) {
+		case 1:
+			disp.updatelast();
+			yield();
+			break;
+		case 2:
+			net.UpdateData(&disp,&sm);
+			net.ConfigDone();
+			disp.EnableUpdate();
+			yield();
+			break;
 	}
 }
