@@ -88,20 +88,20 @@ void display::LoadFrame(smarthome *data) {
 #endif
 		if ( data->GetLine() == 0 ) {
 #ifdef DEBUG
-			Serial.println("Headline is first line, adding date" + date);
+			Serial.println("Headline is first line, adding date \"" + date + "\"");
 			Serial.flush();
 #endif
 			PrintHeadLine(data->GetName(), date, data);
 		} else {
 #ifdef DEBUG
-			Serial.println("Headline" + data->GetName() + "add");
+			Serial.println("Headline \"" + data->GetName() + "\" add");
 			Serial.flush();
 #endif
 			PrintHeadLine(data->GetLine(),data->GetName(),data);
 		}
 	} else {
 #ifdef DEBUG
-		Serial.println("Adding DataEntry for" + data->GetLine());
+		Serial.println("Adding DataEntry for " + data->GetLine());
 		Serial.flush();
 #endif
 		PrintValueLine(3,data->GetLine(),0,data->GetName(),data->GetEinheit(),data->GetData(),data);
@@ -109,19 +109,19 @@ void display::LoadFrame(smarthome *data) {
 	while(data->SetNext()) {
 		if ( data->IsHeadline() ) {
 #ifdef DEBUG
-			Serial.println("Adding Headling");
+			Serial.println("Adding Headline");
 			Serial.flush();
 #endif
 			if ( data->GetLine() == 0 ) {
 #ifdef DEBUG
-				Serial.println("Headline is first line, adding date" + date);
+				Serial.println("Headline is first line, adding date \"" + date + "\"");
 				Serial.flush();
 #endif
 				PrintHeadLine(data->GetName(),date,data);
 			} else {
 #ifdef DEBUG
-				Serial.println("Headline" + data->GetName() + "add");
-				Serial.println("Headlinepos: " + String(data->GetLine()));
+				Serial.println("Headline \"" + data->GetName() + "\" add");
+				Serial.println("Headlinepos: " + String(data->GetLine()) );
 				Serial.flush();
 #endif
 				PrintHeadLine(data->GetLine(),data->GetName(),data);
@@ -129,7 +129,7 @@ void display::LoadFrame(smarthome *data) {
 		} else {
 			if( data->GetLine() > 0 ) {
 #ifdef DEBUG
-				Serial.println("Adding DataEntry for" + data->GetLine());
+				Serial.println("Adding DataEntry for \"" + data->GetName() + "\"" );
 				Serial.flush();
 #endif
 				PrintValueLine(3,data->GetLine(),0,data->GetName(),data->GetEinheit(),data->GetData(),data);
