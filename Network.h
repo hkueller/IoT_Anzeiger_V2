@@ -23,8 +23,12 @@
 #include <PubSubClient.h>
 #include <config.h>
 #include <Data.h>
+#ifdef USE_WEBSERIAL
+#include <webSerial.h>
+#endif
 
-void callback(char* topic, byte* payload, unsigned int length);
+//void callback(char* topic, byte* payload, unsigned int length);
+void mqtt_cb(char* topic, byte* payload, unsigned int length);
 
 class network {
 private:
@@ -49,6 +53,7 @@ public:
 	//WiFiClient * FhemConnect();
 	int FhemConnect();
 	void FhemDisconnect();
+	int FhemConnCheck();
 	void handleOTA();
 	void handleNet(smarthome *sm, display *disp);
 	void StoreTimeLastRead();
